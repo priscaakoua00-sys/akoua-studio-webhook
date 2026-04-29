@@ -1,5 +1,7 @@
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+module.exports = async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   try {
     const { id } = req.body;
@@ -10,15 +12,15 @@ export default async function handler(req, res) {
       headers: { 'Authorization': `Bearer ${process.env.MOLLIE_API_KEY}` }
     });
     const payment = await mollieRes.json();
-    if (payment.status !== 'paid') return res.status(200).json({ status: 'not_paid_yet' });
 
-    // 2. Extraire les infos du paiement
+    if (payment.status !== 'paid') {
+      return res.status(200).json({ status: 'not_paid_yet' });
+    }
+
+    // 2. Extraire les infos
     const meta = payment.metadata || {};
     const session = {
-      id: crypto.randomUUID(),
       client: meta.naam || payment.description,
-      email: meta.email || '',
-      phone: meta.telefoon || '',
       formula: meta.formule || payment.description,
       price: parseFloat(payment.amount.value),
       date: new Date().toLocaleDateString('nl-NL'),
@@ -28,20 +30,23 @@ export default async function handler(req, res) {
     };
 
     // 3. Sauvegarder dans Supabase
-    await fetch(`${process.env.SUPABASE_URL}/rest/v1/sessions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': process.env.SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
-        'Prefer': 'return=representation',
-      },
-      body: JSON.stringify(session),
-    });
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+      await fetch(`${process.env.SUPABASE_URL}/rest/v1/sessions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify(session),
+      });
+    }
 
-    // 4. Notification WhatsApp automatique
+    // 4. Notification WhatsApp
     if (process.env.WA_KEY) {
-      const msg = encodeURIComponent(`🎉 Nieuw betaling!\nKlant: ${session.client}\nFormule: ${session.formula}\nBedrag: €${session.price}\n✅ Opgeslagen in Admin App`);
+      const msg = encodeURIComponent(
+        `🎉 Nieuw betaling!\nKlant: ${session.client}\nFormule: ${session.formula}\nBedrag: €${session.price}\n✅ Automatisch opgeslagen!`
+      );
       await fetch(`https://api.callmebot.com/whatsapp.php?phone=31627374813&text=${msg}&apikey=${process.env.WA_KEY}`);
     }
 
@@ -50,4 +55,4 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
-}
+};
