@@ -1,0 +1,6 @@
+{
+  "name": "akoua-studio-webhook",
+  "version": "1.0.0",
+  "description": "Mollie webhook pour Akoua Studio",
+  "private": true
+}
