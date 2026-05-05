@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "api/webhook.js": {
+      "runtime": "edge"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/webhook",
+      "dest": "/api/webhook.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
