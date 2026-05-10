@@ -1,6 +1,9 @@
 {
   "name": "akoua-studio-webhook",
   "version": "1.0.0",
-  "description": "Mollie webhook pour Akoua Studio",
-  "private": true
+  "description": "Webhook Mollie → Supabase pour Akoua Studio",
+  "main": "api/mollie-webhook.js",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  }
 }
