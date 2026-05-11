@@ -1,0 +1,3343 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Akoua Studio — Admin v2.0 · Roosendaal</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ============================================================
+   CSS VARIABLES & RESET
+   ============================================================ */
+:root {
+  --black: #0a0a0a;
+  --dark: #111111;
+  --card: #181818;
+  --border: #2a2a2a;
+  --gold: #c9a84c;
+  --gold-light: #e0c06a;
+  --gold-dim: rgba(201,168,76,0.15);
+  --white: #f5f0e8;
+  --grey: #888;
+  --grey-light: #bbb;
+  --danger: #e05555;
+  --success: #4caf7d;
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Montserrat', sans-serif;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;scroll-behavior:smooth;}
+body{
+  background:var(--black);
+  color:var(--white);
+  font-family:var(--font-body);
+  font-weight:300;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+input,select,textarea,button{font-family:var(--font-body);outline:none;}
+button{cursor:pointer;border:none;background:none;}
+a{color:inherit;text-decoration:none;}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+#app{display:flex;flex-direction:column;min-height:100vh;}
+
+/* TOP BAR */
+.topbar{
+  background:var(--dark);
+  border-bottom:1px solid var(--border);
+  padding:0 16px;
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.topbar-logo{
+  font-family:var(--font-display);
+  font-size:1.3rem;
+  font-weight:600;
+  letter-spacing:0.08em;
+  color:var(--gold);
+}
+.topbar-logo span{color:var(--white);font-weight:300;}
+.topbar-actions{display:flex;gap:8px;align-items:center;}
+.lang-btn{
+  font-size:0.7rem;
+  font-weight:500;
+  letter-spacing:0.08em;
+  color:var(--grey);
+  padding:4px 8px;
+  border:1px solid var(--border);
+  border-radius:4px;
+  transition:all .2s;
+}
+.lang-btn.active,.lang-btn:hover{color:var(--gold);border-color:var(--gold);}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--dark);
+  border-top:1px solid var(--border);
+  display:flex;
+  z-index:100;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-item{
+  flex:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:10px 4px 8px;
+  gap:4px;
+  color:var(--grey);
+  font-size:0.6rem;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  font-weight:500;
+  transition:color .2s;
+  border:none;background:none;
+}
+.nav-item.active{color:var(--gold);}
+.nav-item svg{width:22px;height:22px;stroke-width:1.5;}
+
+/* MAIN CONTENT */
+.main{flex:1;padding:20px 16px 100px;}
+
+/* PAGES */
+.page{display:none;}
+.page.active{display:block;}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+.page-title{
+  font-family:var(--font-display);
+  font-size:1.8rem;
+  font-weight:400;
+  color:var(--gold);
+  margin-bottom:4px;
+}
+.page-sub{
+  font-size:0.72rem;
+  color:var(--grey);
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  margin-bottom:24px;
+}
+.section-title{
+  font-size:0.68rem;
+  font-weight:600;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+}
+.section-title::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px;
+  margin-bottom:12px;
+}
+.card-gold{border-color:var(--gold);background:linear-gradient(135deg,var(--card),#1a1500);}
+
+/* ============================================================
+   STATS GRID
+   ============================================================ */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.stat-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px;
+  text-align:center;
+}
+.stat-value{
+  font-family:var(--font-display);
+  font-size:1.6rem;
+  font-weight:600;
+  color:var(--gold);
+  line-height:1;
+}
+.stat-label{font-size:0.62rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px;}
+
+/* ============================================================
+   FORMS
+   ============================================================ */
+.form-group{margin-bottom:14px;}
+.form-label{
+  display:block;
+  font-size:0.68rem;
+  font-weight:500;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--grey-light);
+  margin-bottom:6px;
+}
+.form-input,.form-select,.form-textarea{
+  width:100%;
+  background:var(--dark);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:12px 14px;
+  color:var(--white);
+  font-size:0.9rem;
+  font-weight:300;
+  transition:border-color .2s;
+}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--gold);}
+.form-select option{background:var(--dark);}
+.form-textarea{resize:vertical;min-height:80px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 20px;
+  border-radius:var(--radius-sm);
+  font-size:0.78rem;
+  font-weight:500;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  transition:all .2s;
+}
+.btn-gold{
+  background:var(--gold);
+  color:var(--black);
+  width:100%;
+}
+.btn-gold:hover{background:var(--gold-light);}
+.btn-outline{
+  background:transparent;
+  color:var(--gold);
+  border:1px solid var(--gold);
+}
+.btn-outline:hover{background:var(--gold-dim);}
+.btn-ghost{
+  background:transparent;
+  color:var(--grey-light);
+  border:1px solid var(--border);
+}
+.btn-ghost:hover{border-color:var(--grey-light);color:var(--white);}
+.btn-danger{background:var(--danger);color:var(--white);}
+.btn-sm{padding:8px 14px;font-size:0.7rem;}
+.btn-full{width:100%;}
+.btn-row{display:flex;gap:8px;margin-top:8px;}
+
+/* ============================================================
+   BADGES
+   ============================================================ */
+.badge{
+  display:inline-block;
+  padding:3px 8px;
+  border-radius:20px;
+  font-size:0.62rem;
+  font-weight:600;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+}
+.badge-gold{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,76,0.3);}
+.badge-green{background:rgba(76,175,125,0.15);color:var(--success);border:1px solid rgba(76,175,125,0.3);}
+.badge-red{background:rgba(224,85,85,0.15);color:var(--danger);border:1px solid rgba(224,85,85,0.3);}
+.badge-grey{background:rgba(136,136,136,0.15);color:var(--grey-light);}
+
+/* ============================================================
+   LIST ITEMS
+   ============================================================ */
+.list-item{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:14px;
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  transition:border-color .2s;
+}
+.list-item:hover{border-color:var(--gold);}
+.list-item-avatar{
+  width:40px;height:40px;
+  border-radius:50%;
+  background:var(--gold-dim);
+  border:1px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);
+  font-size:1rem;
+  color:var(--gold);
+  flex-shrink:0;
+}
+.list-item-body{flex:1;min-width:0;}
+.list-item-title{font-size:0.88rem;font-weight:500;color:var(--white);margin-bottom:2px;}
+.list-item-sub{font-size:0.72rem;color:var(--grey);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-item-right{text-align:right;flex-shrink:0;}
+.list-item-amount{font-family:var(--font-display);font-size:1rem;color:var(--gold);}
+.list-item-date{font-size:0.68rem;color:var(--grey);margin-top:2px;}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.8);
+  z-index:200;
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+  padding:0;
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--dark);
+  border:1px solid var(--border);
+  border-radius:20px 20px 0 0;
+  width:100%;
+  max-height:92vh;
+  overflow-y:auto;
+  padding:24px 20px 40px;
+  animation:slideUp .3s ease;
+}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.modal-handle{
+  width:40px;height:4px;
+  background:var(--border);
+  border-radius:2px;
+  margin:0 auto 20px;
+}
+.modal-title{
+  font-family:var(--font-display);
+  font-size:1.4rem;
+  color:var(--gold);
+  margin-bottom:4px;
+}
+.modal-sub{font-size:0.72rem;color:var(--grey);margin-bottom:20px;}
+
+/* ============================================================
+   INVOICE PREVIEW (print-ready)
+   ============================================================ */
+#invoice-print{
+  background:white;
+  color:#111;
+  padding:32px;
+  font-family:'Montserrat',sans-serif;
+  font-size:13px;
+  border-radius:var(--radius);
+  display:none;
+}
+.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;}
+.inv-brand{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:#c9a84c;}
+.inv-brand-sub{font-size:10px;color:#888;letter-spacing:0.1em;text-transform:uppercase;}
+.inv-meta{text-align:right;font-size:11px;color:#555;}
+.inv-meta strong{color:#111;font-size:14px;display:block;margin-bottom:4px;}
+.inv-parties{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;}
+.inv-party-label{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#888;margin-bottom:6px;border-bottom:1px solid #eee;padding-bottom:4px;}
+.inv-party-name{font-weight:600;margin-bottom:2px;}
+.inv-party-detail{font-size:11px;color:#555;line-height:1.6;}
+.inv-table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+.inv-table th{background:#f5f5f5;padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#555;}
+.inv-table td{padding:10px;border-bottom:1px solid #eee;font-size:12px;}
+.inv-totals{margin-left:auto;width:220px;}
+.inv-totals-row{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid #eee;}
+.inv-totals-row.total{font-weight:600;font-size:14px;color:#c9a84c;border-bottom:2px solid #c9a84c;}
+.inv-footer{margin-top:32px;font-size:10px;color:#888;text-align:center;border-top:1px solid #eee;padding-top:12px;}
+.inv-status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;background:#fff0d4;color:#c9a84c;border:1px solid #c9a84c;}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast-container{
+  position:fixed;top:70px;right:16px;left:16px;
+  z-index:300;display:flex;flex-direction:column;gap:8px;pointer-events:none;
+}
+.toast{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:12px 16px;
+  font-size:0.8rem;
+  color:var(--white);
+  animation:toastIn .3s ease;
+  pointer-events:auto;
+}
+.toast.success{border-color:var(--success);color:var(--success);}
+.toast.error{border-color:var(--danger);color:var(--danger);}
+@keyframes toastIn{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ============================================================
+   BOOKING PAGE (public)
+   ============================================================ */
+.booking-hero{
+  text-align:center;
+  padding:40px 0 24px;
+}
+.booking-hero-logo{
+  font-family:var(--font-display);
+  font-size:2rem;
+  color:var(--gold);
+  margin-bottom:4px;
+}
+.booking-hero-sub{font-size:0.72rem;color:var(--grey);letter-spacing:0.1em;text-transform:uppercase;}
+
+/* ============================================================
+   CHART BAR
+   ============================================================ */
+.chart-wrap{margin:8px 0;}
+.chart-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.chart-bar-label{font-size:0.7rem;color:var(--grey);width:32px;text-align:right;}
+.chart-bar-track{flex:1;background:var(--border);border-radius:4px;height:8px;overflow:hidden;}
+.chart-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:4px;transition:width .6s ease;}
+.chart-bar-val{font-size:0.7rem;color:var(--gold-light);width:48px;}
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+.search-wrap{position:relative;margin-bottom:16px;}
+.search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--grey);}
+.search-input{
+  width:100%;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:11px 12px 11px 38px;
+  color:var(--white);
+  font-size:0.85rem;
+  transition:border-color .2s;
+}
+.search-input:focus{border-color:var(--gold);}
+
+/* ============================================================
+   DIVIDER
+   ============================================================ */
+.divider{height:1px;background:var(--border);margin:16px 0;}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty{text-align:center;padding:40px 20px;}
+.empty-icon{font-size:2rem;margin-bottom:8px;opacity:.4;}
+.empty-text{font-size:0.8rem;color:var(--grey);}
+
+/* ============================================================
+   TOGGLE
+   ============================================================ */
+.toggle-wrap{display:flex;gap:0;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:16px;}
+.toggle-btn{flex:1;padding:9px;font-size:0.7rem;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--grey);background:transparent;transition:all .2s;border:none;}
+.toggle-btn.active{background:var(--gold);color:var(--black);}
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+@media print {
+  body>*:not(#print-wrapper){display:none!important;}
+  #print-wrapper{display:block!important;}
+  #invoice-print{display:block!important;}
+}
+</style>
+<style>
+/* ── CLIENT MODE ── */
+#clientMode{display:none;min-height:100vh;background:var(--black);font-family:var(--font-body);}
+#clientMode.show{display:block;}
+.cm-header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+.cm-logo{font-family:var(--font-display);font-size:1.3rem;color:var(--gold);letter-spacing:3px;}
+.cm-logout{background:none;border:1px solid var(--border);color:var(--grey);padding:6px 12px;font-size:0.6rem;cursor:pointer;border-radius:var(--radius-sm);}
+.cm-body{padding:20px;max-width:480px;margin:0 auto;}
+.cm-welcome{font-family:var(--font-display);font-size:1.5rem;color:var(--white);margin-bottom:4px;}
+.cm-email{font-size:0.65rem;color:var(--grey);margin-bottom:24px;}
+.cm-section{margin-bottom:24px;}
+.cm-title{font-size:0.45rem;letter-spacing:5px;color:var(--gold);margin-bottom:14px;display:block;}
+.cm-slot{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-bottom:10px;cursor:pointer;transition:.2s;}
+.cm-slot:hover{border-color:var(--gold);}
+.cm-slot.booked{opacity:0.4;cursor:not-allowed;border-color:var(--danger);}
+.cm-slot.selected{border-color:var(--gold);background:rgba(201,168,76,0.08);}
+.cm-slot-name{font-family:var(--font-display);font-size:1.1rem;color:var(--white);margin-bottom:4px;}
+.cm-slot-dur{font-size:0.55rem;letter-spacing:3px;color:var(--grey);}
+.cm-slot-price{font-family:var(--font-display);font-size:1.4rem;color:var(--gold);float:right;margin-top:-28px;}
+.cm-slot-status{font-size:0.5rem;color:var(--danger);margin-top:4px;}
+.cm-date-input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px 14px;color:var(--white);font-size:0.85rem;margin-bottom:14px;}
+.cm-btn{width:100%;background:var(--gold);color:#000;border:none;padding:16px;font-size:0.6rem;letter-spacing:4px;font-weight:700;cursor:pointer;text-transform:uppercase;border-radius:var(--radius-sm);margin-top:8px;}
+.cm-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.cm-abo-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-bottom:10px;}
+.cm-abo-card.active-abo{border-color:var(--gold);}
+.cm-abo-name{font-family:var(--font-display);font-size:1.1rem;color:var(--white);}
+.cm-abo-detail{font-size:0.6rem;color:var(--grey);margin:4px 0 10px;}
+.cm-abo-price{font-family:var(--font-display);font-size:1.5rem;color:var(--gold);margin-bottom:12px;}
+.cm-abo-btn{display:block;text-align:center;background:var(--gold);color:#000;padding:12px;font-size:0.58rem;letter-spacing:3px;font-weight:700;text-decoration:none;border-radius:var(--radius-sm);}
+
+/* LOGIN SCREEN */
+#loginScreen{display:none;min-height:100vh;background:var(--black);display:flex;align-items:center;justify-content:center;padding:24px;}
+#loginScreen.show{display:flex;}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:36px 28px;width:100%;max-width:380px;text-align:center;}
+.login-logo{font-family:var(--font-display);font-size:2rem;color:var(--gold);letter-spacing:4px;margin-bottom:4px;}
+.login-sub{font-size:0.5rem;letter-spacing:4px;color:var(--grey);margin-bottom:28px;}
+.login-label{font-size:0.42rem;letter-spacing:4px;color:var(--gold);display:block;text-align:left;margin-bottom:8px;}
+.login-input{width:100%;background:var(--black);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px 14px;color:var(--white);font-size:0.85rem;margin-bottom:8px;}
+.login-input:focus{outline:none;border-color:var(--gold);}
+.login-btn{width:100%;background:var(--gold);color:#000;border:none;padding:14px;font-size:0.6rem;letter-spacing:4px;font-weight:700;cursor:pointer;border-radius:var(--radius-sm);margin-top:8px;}
+.login-switch{font-size:0.62rem;color:var(--grey);margin-top:16px;cursor:pointer;}
+.login-switch span{color:var(--gold);text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo" onclick="secretAdminClick()" style="cursor:default;">AKOUA</div>
+    <div class="login-sub">STUDIO · ROOSENDAAL</div>
+    <div id="loginForm">
+      <label class="login-label">EMAIL</label>
+      <input class="login-input" type="email" id="loginEmail" placeholder="jouw@email.com">
+      <label class="login-label" style="margin-top:12px;">NAAM</label>
+      <input class="login-input" type="text" id="loginName" placeholder="Jouw naam">
+      <button class="login-btn" onclick="clientLogin()">INLOGGEN / DOORGAAN &#8594;</button>
+      <p class="login-switch" style="display:none;">Ben je de eigenaar? <span onclick="showAdminLogin()">Admin toegang</span></p>
+    </div>
+    <div id="adminLoginForm" style="display:none;">
+      <label class="login-label">ADMIN WACHTWOORD</label>
+      <input class="login-input" type="password" id="adminPwd" placeholder="••••••••">
+      <button class="login-btn" onclick="adminLogin()">ADMIN INLOGGEN &#8594;</button>
+      <p class="login-switch"><span onclick="showClientLogin()">&#8592; Terug</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT MODE -->
+<div id="clientMode">
+  <div class="cm-header">
+    <span class="cm-logo">AKOUA STUDIO</span>
+    <button class="cm-logout" onclick="logout()">Uitloggen</button>
+  </div>
+  <div class="cm-body">
+    <div class="cm-welcome" id="cmWelcome">Welkom!</div>
+    <div class="cm-email" id="cmEmail"></div>
+
+    <!-- ABONNEMENT ACTIF -->
+    <div class="cm-section" id="cmAboSection" style="display:none;">
+      <span class="cm-title">JOUW ABONNEMENT</span>
+      <div class="cm-abo-card active-abo" id="cmAboCard"></div>
+    </div>
+
+    <!-- SESSIE RESERVEREN -->
+    <div class="cm-section">
+      <span class="cm-title">SESSIE RESERVEREN</span>
+      <div id="cmSlots">
+        <div class="cm-slot" onclick="selectSlot(this,'Essential','1 uur','60','https://payment-links.mollie.com/payment/KKJeADh7BYr4cbPqu3tH9')">
+          <div class="cm-slot-name">&#10024; Essential</div>
+          <div class="cm-slot-dur">1 UUR</div>
+          <div class="cm-slot-price">&#8364;60</div>
+        </div>
+        <div class="cm-slot" onclick="selectSlot(this,'Signature','3 uur','170','https://payment-links.mollie.com/payment/KuARFwrqvdMjGujBzJ9zY')">
+          <div class="cm-slot-name">&#128081; Signature</div>
+          <div class="cm-slot-dur">3 UUR &nbsp;&#183;&nbsp; POPULAIR</div>
+          <div class="cm-slot-price">&#8364;170</div>
+        </div>
+        <div class="cm-slot" onclick="selectSlot(this,'Full Day','8 uur','399','https://payment-links.mollie.com/payment/udPD3wcsiMLSVF9VoDN8v')">
+          <div class="cm-slot-name">&#127775; Full Day</div>
+          <div class="cm-slot-dur">8 UUR</div>
+          <div class="cm-slot-price">&#8364;399</div>
+        </div>
+      </div>
+      <div id="cmBookingForm" style="display:none;margin-top:16px;">
+        <span class="cm-title">KIES DATUM &amp; TIJD</span>
+        <input class="cm-date-input" type="datetime-local" id="cmDateTime">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;font-size:0.65rem;color:var(--grey);">
+          &#128179; Betaling via iDEAL, creditcard, Apple Pay. Veilig &amp; direct via Mollie.
+        </div>
+        <button class="cm-btn" id="cmPayBtn" onclick="goToPayment()">BETALEN &amp; BEVESTIGEN &#8594;</button>
+        <button style="width:100%;background:none;border:none;color:var(--grey);padding:10px;font-size:0.62rem;cursor:pointer;margin-top:4px;" onclick="cancelSlot()">Annuleren</button>
+      </div>
+    </div>
+
+    <!-- ABONNEMENTEN -->
+    <div class="cm-section">
+      <span class="cm-title">ABONNEMENTEN</span>
+      <!-- Starter €199 verborgen op verzoek -->
+      <div class="cm-abo-card" style="border-color:rgba(201,168,76,0.4);">
+        <div style="font-size:0.4rem;letter-spacing:3px;background:var(--gold);color:#000;padding:3px 10px;display:inline-block;margin-bottom:8px;font-weight:700;">MEEST GEKOZEN</div>
+        <div class="cm-abo-name">&#128081; Pro</div>
+        <div class="cm-abo-detail">14 uur per maand &nbsp;&#183;&nbsp; max. 2 uur per sessie &nbsp;&#183;&nbsp; max. 2&times; per week</div>
+        <div class="cm-abo-price">&#8364;799<span style="font-size:0.7rem;color:var(--grey);">/maand</span></div>
+        <button class="cm-abo-btn" onclick="showAboConfirm('Pro','14 uur per maand · max. 2 uur per sessie · max. 2× per week','799','https://payment-links.mollie.com/payment/K3Z8Qakj5qeLFJBdLA28M')">Starten &#8594;</button>
+      </div>
+      <div class="cm-abo-card">
+        <div class="cm-abo-name">&#127775; Premium</div>
+        <div class="cm-abo-detail">16 uur per maand · max. 3 uur per sessie · max. 2x per week</div>
+        <div class="cm-abo-price">&#8364;999<span style="font-size:0.7rem;color:var(--grey);">/maand</span></div>
+        <button class="cm-abo-btn" onclick="showAboConfirm('Premium','16 uur per maand · max. 3 uur per sessie · max. 2x per week','999','https://payment-links.mollie.com/payment/JZbKbnCHAnojC253g2MgS')">Starten &#8594;</button>
+      </div>
+    </div>
+
+    <!-- MES SESSIONS -->
+    <div class="cm-section">
+      <span class="cm-title">MIJN SESSIES</span>
+      <div id="cmMySessions"><p style="font-size:0.7rem;color:var(--grey);">Nog geen sessies geboekt.</p></div>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-logo">AKOUA <span>STUDIO</span></div>
+    <div class="topbar-actions">
+      <button class="lang-btn active" onclick="setLang('fr')">FR</button>
+      <button class="lang-btn" onclick="setLang('nl')">NL</button>
+      <button class="lang-btn" onclick="setLang('es')">ES</button>
+    </div>
+  </header>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- MAIN CONTENT -->
+  <main class="main" id="main-content">
+
+    <!-- ===================== PAGE: DASHBOARD ===================== -->
+    <div class="page active" id="page-dashboard">
+      <h1 class="page-title" data-i18n="dash_title">Tableau de bord</h1>
+      <p class="page-sub" data-i18n="dash_sub">Vue d'ensemble du studio</p>
+
+      <div class="stats-grid" id="stats-grid"></div>
+
+      <!-- KPIs Kosten & Uren -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div style="background:linear-gradient(135deg,#1a0a0a,#2a1010);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:0.65rem;letter-spacing:0.1em;color:#888;text-transform:uppercase;margin-bottom:6px;" id="dash-kosten-label">💸 Totaal Kosten</div>
+          <div id="dash-kosten" style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;color:#e05555;">€0</div>
+          <div id="dash-kosten-count" style="font-size:0.7rem;color:#666;margin-top:3px;">0 uitgaven</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#0a0a1a,#10102a);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:0.65rem;letter-spacing:0.1em;color:#888;text-transform:uppercase;margin-bottom:6px;" id="dash-uren-label">⏱ Uren 2026</div>
+          <div id="dash-uren" style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;color:#c9a84c;">0u</div>
+          <div id="dash-uren-pct" style="font-size:0.7rem;color:#666;margin-top:3px;">0% van 1225u</div>
+        </div>
+      </div>
+
+      <p class="section-title" data-i18n="recent_sessions">Sessions récentes</p>
+      <div id="recent-sessions-list"></div>
+
+      <p class="section-title" data-i18n="revenue_chart">Revenus par mois</p>
+      <div class="card">
+        <div class="chart-wrap" id="revenue-chart"></div>
+      </div>
+
+      <p class="section-title" data-i18n="top_clients">Top clients</p>
+      <div id="top-clients-list"></div>
+    </div>
+
+    <!-- ===================== PAGE: SESSIONS ===================== -->
+    <div class="page" id="page-sessions">
+      <h1 class="page-title" data-i18n="sessions_title">Sessions</h1>
+      <p class="page-sub" data-i18n="sessions_sub">Gérer les réservations</p>
+
+      <button class="btn btn-gold btn-full" onclick="openModal('modal-session')" style="margin-bottom:20px;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+        <span data-i18n="add_session">Nouvelle session</span>
+      </button>
+
+      <div class="toggle-wrap">
+        <button class="toggle-btn active" onclick="filterSessions('all')" data-i18n="all">Toutes</button>
+        <button class="toggle-btn" onclick="filterSessions('upcoming')" data-i18n="upcoming">À venir</button>
+        <button class="toggle-btn" onclick="filterSessions('past')" data-i18n="past">Passées</button>
+      </div>
+
+      <div id="sessions-list"></div>
+    </div>
+
+    <!-- ===================== PAGE: CLIENTS ===================== -->
+    <div class="page" id="page-clients">
+      <h1 class="page-title" data-i18n="clients_title">Clients</h1>
+      <p class="page-sub" data-i18n="clients_sub">CRM — Historique & contacts</p>
+
+      <div class="search-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>
+        <input type="text" class="search-input" id="client-search" placeholder="Rechercher un client…" oninput="renderClients()" data-i18n-placeholder="search_client">
+      </div>
+
+      <div id="clients-list"></div>
+    </div>
+
+    <!-- ===================== PAGE: FACTURATION ===================== -->
+    <div class="page" id="page-invoices">
+      <h1 class="page-title" data-i18n="inv_title">Facturation</h1>
+      <p class="page-sub" data-i18n="inv_sub">Factures & paiements</p>
+
+      <button class="btn btn-gold btn-full" onclick="openModal('modal-invoice')" style="margin-bottom:20px;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+        <span data-i18n="create_invoice">Créer une facture</span>
+      </button>
+
+      <div id="invoices-list"></div>
+    </div>
+
+    <!-- ===================== PAGE: RÉSERVATION (PUBLIC) ===================== -->
+    <div class="page" id="page-booking">
+      <div class="booking-hero">
+        <div class="booking-hero-logo">AKOUA STUDIO</div>
+        <div class="booking-hero-sub" data-i18n="booking_sub">Réserver une session</div>
+      </div>
+      <div class="card card-gold">
+        <p class="section-title" data-i18n="your_booking">Votre réservation</p>
+        <div class="form-group">
+          <label class="form-label" data-i18n="your_name">Votre nom complet</label>
+          <input type="text" class="form-input" id="book-name" placeholder="Marie Dupont">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="your_email">Email</label>
+          <input type="email" class="form-input" id="book-email" placeholder="marie@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="your_phone">Téléphone</label>
+          <input type="tel" class="form-input" id="book-phone" placeholder="+31 6 00 00 00 00">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="choose_formula">Formule</label>
+          <select class="form-select" id="book-formula">
+            <option value="">— Choisir —</option>
+            <option value="Essential — €60">✨ Essential — €60 (1 uur)</option>
+            <option value="Signature — €170">👑 Signature — €170 (3 uur)</option>
+            <option value="Full Day — €399">🌟 Full Day — €399 (8 uur)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="choose_date">Date souhaitée</label>
+          <input type="date" class="form-input" id="book-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="your_message">Message (optionnel)</label>
+          <textarea class="form-textarea" id="book-message" placeholder="Décrivez votre projet…"></textarea>
+        </div>
+        <button class="btn btn-gold btn-full" onclick="submitBooking()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>
+          <span data-i18n="send_booking">Envoyer ma demande</span>
+        </button>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <p class="section-title" data-i18n="pending_bookings">Demandes reçues</p>
+        <div id="bookings-list"></div>
+      </div>
+    </div>
+
+    <!-- ===================== PAGE: PARAMÈTRES ===================== -->
+    <div class="page" id="page-settings">
+      <h1 class="page-title" data-i18n="settings_title">Paramètres</h1>
+      <p class="page-sub" data-i18n="settings_sub">Studio & compte</p>
+
+      <p class="section-title" data-i18n="studio_info">Informations studio</p>
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label">Nom du studio</label>
+          <input type="text" class="form-input" id="set-studio-name" placeholder="AKOUA STUDIO" value="Akoua Studio">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Adresse</label>
+          <input type="text" class="form-input" id="set-address" value="Keulsveld 17, kantoor 4, 4705 RS Roosendaal">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="set-email" value="akouastudio@gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Téléphone</label>
+          <input type="tel" class="form-input" id="set-phone" value="06 27 37 48 13">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">KVK</label>
+            <input type="text" class="form-input" id="set-kvk" placeholder="42042214" value="42042214">
+          </div>
+          <div class="form-group">
+            <label class="form-label">BTW / TVA</label>
+            <input type="text" class="form-input" id="set-btw" placeholder="NL005451884B82" value="NL005451884B82">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">IBAN</label>
+          <input type="text" class="form-input" id="set-iban" placeholder="NL00 BANK 0000 0000 00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Website</label>
+          <input type="text" class="form-input" id="set-website" value="akouastudio.nl">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mollie — Essential €60</label>
+          <input type="text" class="form-input" id="set-mollie-60" value="https://payment-links.mollie.com/payment/KKJeADh7BYr4cbPqu3tH9">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mollie — Signature €170</label>
+          <input type="text" class="form-input" id="set-mollie-170" value="https://payment-links.mollie.com/payment/KuARFwrqvdMjGujBzJ9zY">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mollie — Full Day €399</label>
+          <input type="text" class="form-input" id="set-mollie-399" value="https://payment-links.mollie.com/payment/udPD3wcsiMLSVF9VoDN8v">
+        </div>
+        <button class="btn btn-gold btn-full" onclick="saveSettings()">
+          <span data-i18n="save_settings">Enregistrer</span>
+        </button>
+      </div>
+
+      <p class="section-title" data-i18n="data_backup">Sauvegarde des données</p>
+      <div class="card">
+        <p style="font-size:0.78rem;color:var(--grey);margin-bottom:14px;" data-i18n="backup_desc">Exportez toutes vos données en JSON pour les sauvegarder. Importez pour restaurer.</p>
+        <div class="btn-row">
+          <button class="btn btn-outline btn-sm" onclick="exportData()" style="flex:1;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+            <span data-i18n="export_json">Exporter JSON</span>
+          </button>
+          <label class="btn btn-ghost btn-sm" style="flex:1;cursor:pointer;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+            <span data-i18n="import_json">Importer JSON</span>
+            <input type="file" accept=".json" style="display:none;" onchange="importData(event)">
+          </label>
+        </div>
+      </div>
+
+      <p class="section-title" style="color:var(--danger);">Zone dangereuse</p>
+      <div class="card" style="border-color:rgba(224,85,85,0.3);">
+        <p style="font-size:0.78rem;color:var(--grey);margin-bottom:14px;" data-i18n="reset_desc">Réinitialiser toutes les données du studio. Cette action est irréversible.</p>
+        <button class="btn btn-danger btn-sm" onclick="confirmReset()">
+          <span data-i18n="reset_all">Réinitialiser les données</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===================== PAGE: BTW AANGIFTE ===================== -->
+    <div class="page" id="page-btw">
+      <h1 class="page-title">📋 <span data-i18n="btw_title">BTW Aangifte</span></h1>
+      <p class="page-sub" data-i18n="btw_sub">Kwartaaloverzicht voor belastingdienst</p>
+
+      <!-- Kwartaal selector -->
+      <div class="card" style="margin-bottom:16px;">
+        <p class="section-title">Kies kwartaal</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label class="form-label">Jaar</label>
+            <select class="form-select" id="btw-jaar" onchange="renderBTW()">
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Kwartaal</label>
+            <select class="form-select" id="btw-kwartaal" onchange="renderBTW()">
+              <option value="1">Q1 — Jan/Feb/Mar</option>
+              <option value="2" selected>Q2 — Apr/Mai/Jun</option>
+              <option value="3">Q3 — Jul/Aug/Sep</option>
+              <option value="4">Q4 — Okt/Nov/Dec</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Samenvatting -->
+      <div id="btw-summary" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;"></div>
+
+      <!-- Actie knoppen -->
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <button class="btn btn-gold" style="flex:2;" onclick="downloadBTWPDF()">
+          🖨️ Download PDF Aangifte
+        </button>
+        <button class="btn btn-outline" style="flex:1;" onclick="renderBTW()">
+          🔄 Vernieuwen
+        </button>
+      </div>
+
+      <!-- Detail rapport -->
+      <div id="btw-detail"></div>
+    </div>
+
+    <!-- ===================== PAGE: KOSTEN ===================== -->
+    <div class="page" id="page-kosten">
+      <h1 class="page-title">💸 <span data-i18n="kosten_title">Kosten & Uitgaven</span></h1>
+      <p class="page-sub" data-i18n="kosten_sub">Alle zakelijke uitgaven voor belastingaangifte</p>
+
+      <div id="kosten-totaal-card" style="background:linear-gradient(135deg,#1a0a0a,#2a1010);border:1px solid rgba(201,168,76,0.3);border-radius:12px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:0.7rem;letter-spacing:0.1em;color:#888;text-transform:uppercase;margin-bottom:4px">Totaal Kosten 2026</div>
+          <div id="kosten-totaal-val" style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:600;color:#c9a84c">€0,00</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:0.7rem;color:#888;margin-bottom:4px">Bon aanwezig</div>
+          <div id="kosten-bon-count" style="font-size:1.2rem;font-weight:600;color:#4caf7d">0 / 0</div>
+        </div>
+      </div>
+
+      <button class="btn btn-gold btn-full" onclick="openModal('modal-kosten')" style="margin-bottom:16px;" data-i18n="add_kosten">
+        + Kosten toevoegen
+      </button>
+
+      <div id="kosten-list"></div>
+    </div>
+
+    <!-- ===================== PAGE: UREN ===================== -->
+    <div class="page" id="page-uren">
+      <h1 class="page-title">⏱ <span data-i18n="uren_title">Uren Registratie</span></h1>
+      <p class="page-sub" data-i18n="uren_sub">Bijhouden voor belastingdienst — Doel: 1225 uur/jaar</p>
+
+      <div style="background:linear-gradient(135deg,#0a0a1a,#101028);border:1px solid rgba(201,168,76,0.3);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div>
+            <div style="font-size:0.7rem;letter-spacing:0.1em;color:#888;text-transform:uppercase;margin-bottom:4px">Totaal Uren 2026</div>
+            <div id="uren-totaal-val" style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:600;color:#c9a84c">0u</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:0.7rem;color:#888;margin-bottom:4px">Van 1225u</div>
+            <div id="uren-pct-val" style="font-size:1.4rem;font-weight:700;color:#c9a84c">0%</div>
+          </div>
+        </div>
+        <div style="background:#2a2a2a;border-radius:4px;height:8px;overflow:hidden;">
+          <div id="uren-bar" style="height:100%;background:linear-gradient(90deg,#c9a84c,#f0d080);width:0%;transition:width 1s;border-radius:4px;"></div>
+        </div>
+        <div id="uren-restant" style="font-size:0.75rem;color:#888;margin-top:8px;text-align:center;"></div>
+      </div>
+
+      <button class="btn btn-gold btn-full" onclick="openModal('modal-uren')" style="margin-bottom:16px;" data-i18n="add_uren">
+        + Uren toevoegen
+      </button>
+
+      <div id="uren-list"></div>
+    </div>
+
+  </main>
+
+  <!-- FINANCE DRAWER -->
+  <div id="finance-drawer-overlay" onclick="closeFinanceDrawer()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;"></div>
+  <div id="finance-drawer" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--dark);border-top:1px solid var(--gold);border-radius:20px 20px 0 0;z-index:151;padding:20px 20px 32px;animation:slideUp .25s ease;">
+    <div style="width:36px;height:3px;background:var(--border);border-radius:2px;margin:0 auto 18px;"></div>
+    <div style="font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;font-weight:600;">Finance & Admin</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <button onclick="closeFinanceDrawer();goPage('btw')" id="nav-btw" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--grey);font-size:0.62rem;letter-spacing:0.06em;text-transform:uppercase;font-weight:500;transition:all .2s;" onmouseenter="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--grey)'">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:24px;height:24px;stroke-width:1.5;"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+        <span>BTW</span>
+      </button>
+      <button onclick="closeFinanceDrawer();goPage('kosten')" id="nav-kosten" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--grey);font-size:0.62rem;letter-spacing:0.06em;text-transform:uppercase;font-weight:500;transition:all .2s;" onmouseenter="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--grey)'">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:24px;height:24px;stroke-width:1.5;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75"/></svg>
+        <span>Kosten</span>
+      </button>
+      <button onclick="closeFinanceDrawer();goPage('uren')" id="nav-uren" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--grey);font-size:0.62rem;letter-spacing:0.06em;text-transform:uppercase;font-weight:500;transition:all .2s;" onmouseenter="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--grey)'">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:24px;height:24px;stroke-width:1.5;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Uren</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAVIGATION — 6 items -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="goPage('dashboard')" id="nav-dashboard">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+      <span data-i18n="nav_dash">Dashboard</span>
+    </button>
+    <button class="nav-item" onclick="goPage('sessions')" id="nav-sessions">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+      <span data-i18n="nav_sessions">Sessions</span>
+    </button>
+    <button class="nav-item" onclick="goPage('clients')" id="nav-clients">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+      <span data-i18n="nav_clients">Clients</span>
+    </button>
+    <button class="nav-item" onclick="goPage('invoices')" id="nav-invoices">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+      <span data-i18n="nav_invoices">Factures</span>
+    </button>
+    <button class="nav-item" id="nav-finance" onclick="openFinanceDrawer()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span>Finance</span>
+    </button>
+    <button class="nav-item" onclick="goPage('settings')" id="nav-settings">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <span data-i18n="nav_settings">Réglages</span>
+    </button>
+    <button class="nav-item" onclick="logout()" style="color:#e05555;">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      <span id="nav-logout-label">Uitloggen</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ============================================================
+     MODALS
+     ============================================================ -->
+
+<!-- SESSION MODAL -->
+<div class="modal-overlay" id="modal-session">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-i18n="new_session">Nouvelle session</div>
+    <div class="modal-sub" data-i18n="fill_details">Remplissez les informations</div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="client_name">Nom du client</label>
+      <input type="text" class="form-input" id="s-client" placeholder="Marie Dupont" list="clients-datalist">
+      <datalist id="clients-datalist"></datalist>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-input" id="s-email" placeholder="marie@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Téléphone</label>
+      <input type="tel" class="form-input" id="s-phone" placeholder="+31 6 00 00 00 00">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" data-i18n="date">Date</label>
+        <input type="date" class="form-input" id="s-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="time">Heure</label>
+        <input type="time" class="form-input" id="s-time" value="10:00">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="formula">Formule</label>
+      <select class="form-select" id="s-formula" onchange="autoFillPrice()">
+        <option value="">— Choisir —</option>
+        <option value="Proef Sessie" data-price="15" data-hours="0.5">Proef Sessie (30 min) — €15</option>
+        <option value="Starter" data-price="25" data-hours="1">Starter (1h) — €25</option>
+        <option value="Signature" data-price="45" data-hours="2">Signature (2h) — €45</option>
+        <option value="Premium" data-price="110" data-hours="4">Premium (4h) — €110</option>
+        <option value="Full Day" data-price="220" data-hours="8">Full Day (8h) — €220</option>
+        <option value="Recording 30min" data-price="20" data-hours="0.5">Recording 30min — €20</option>
+        <option value="Recording 1h" data-price="30" data-hours="1">Recording 1h — €30</option>
+        <option value="Recording 4h" data-price="85" data-hours="4">Recording 4h — €85</option>
+        <option value="Recording 8h" data-price="150" data-hours="8">Recording 8h — €150</option>
+        <option value="Sur mesure" data-price="0" data-hours="0">Sur mesure</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Prix TTC (€)</label>
+        <input type="number" class="form-input" id="s-price" placeholder="45" step="0.01" oninput="calcTVA()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Durée (h)</label>
+        <input type="number" class="form-input" id="s-hours" placeholder="2" step="0.5">
+      </div>
+    </div>
+    <div class="card" style="background:#0f0f0f;margin-bottom:14px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--grey);margin-bottom:4px;">
+        <span>HT (excl. BTW)</span><span id="tva-ht">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--grey);margin-bottom:4px;">
+        <span>BTW 21%</span><span id="tva-amount">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.9rem;color:var(--gold);font-weight:500;">
+        <span>Total TTC</span><span id="tva-ttc">—</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Statut</label>
+      <select class="form-select" id="s-status">
+        <option value="confirmed">✅ Confirmé</option>
+        <option value="pending">⏳ En attente</option>
+        <option value="cancelled">❌ Annulé</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea class="form-textarea" id="s-notes" placeholder="Projet, besoins spéciaux…"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-session')" style="flex:1;" data-i18n="cancel">Annuler</button>
+      <button class="btn btn-gold btn-sm" onclick="saveSession()" style="flex:2;" data-i18n="save">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE MODAL -->
+<div class="modal-overlay" id="modal-invoice">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-i18n="create_invoice">Créer une facture</div>
+    <div class="modal-sub">Belastingdienst-conforme</div>
+    <div class="form-group">
+      <label class="form-label">Client</label>
+      <input type="text" class="form-input" id="inv-client" placeholder="Nom ou sélectionner" list="inv-clients-datalist">
+      <datalist id="inv-clients-datalist"></datalist>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Adresse client</label>
+      <textarea class="form-textarea" id="inv-client-address" placeholder="Adresse complète…" style="min-height:60px;"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input" id="inv-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Échéance</label>
+        <input type="date" class="form-input" id="inv-due">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description service</label>
+      <input type="text" class="form-input" id="inv-desc" placeholder="Session photo Signature (2h)">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Prix TTC (€)</label>
+        <input type="number" class="form-input" id="inv-price" placeholder="45" step="0.01" oninput="calcInvTVA()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">TVA %</label>
+        <select class="form-select" id="inv-tva" onchange="calcInvTVA()">
+          <option value="21">21%</option>
+          <option value="9">9%</option>
+          <option value="0">0%</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" style="background:#0f0f0f;margin-bottom:14px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--grey);margin-bottom:4px;">
+        <span>HT</span><span id="inv-tva-ht">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--grey);margin-bottom:4px;">
+        <span>BTW</span><span id="inv-tva-amount">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.9rem;color:var(--gold);font-weight:500;">
+        <span>Total TTC</span><span id="inv-tva-ttc">—</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Statut</label>
+      <select class="form-select" id="inv-status">
+        <option value="pending">⏳ En attente</option>
+        <option value="paid">✅ Payée</option>
+        <option value="overdue">❌ En retard</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" style="display:flex;justify-content:space-between;">
+        Lien Mollie (optionnel)
+        <span style="color:var(--grey);font-weight:300;text-transform:none;letter-spacing:0;">Préparer pour Mollie</span>
+      </label>
+      <input type="text" class="form-input" id="inv-mollie" placeholder="https://payment.mollie.com/…">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-invoice')" style="flex:1;">Annuler</button>
+      <button class="btn btn-gold btn-sm" onclick="saveInvoice()" style="flex:2;">Créer la facture</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT DETAIL MODAL -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="modal-client-content"></div>
+    <button class="btn btn-ghost btn-full btn-sm" style="margin-top:12px;" onclick="closeModal('modal-client')">Fermer</button>
+  </div>
+</div>
+
+<!-- SESSION DETAIL MODAL -->
+<div class="modal-overlay" id="modal-session-detail">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="modal-session-detail-content"></div>
+    <button class="btn btn-ghost btn-full btn-sm" style="margin-top:12px;" onclick="closeModal('modal-session-detail')">Fermer</button>
+  </div>
+</div>
+
+<!-- INVOICE PRINT WRAPPER (hidden, for print only) -->
+<div id="print-wrapper" style="display:none;">
+  <div id="invoice-print"></div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+
+/* ===========================================================
+   SUPABASE — SYNCHRONISATION EN LIGNE
+   =========================================================== */
+const SUPA_URL = 'https://cbvbvyudwstcbkhjcqav.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNidmJ2eXVkd3N0Y2JraGpjcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NTczNjksImV4cCI6MjA5MzIzMzM2OX0.jVfyvEgcmT8ettrjl65eyS1P-WPSGHc1tPanH6jlFOA';
+let supa = null;
+try {
+  supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+} catch(e) { 
+  console.warn('Supabase init failed', e); 
+  supa = null;
+}
+
+// Graceful sync - never breaks the app
+async function safeSync(table, data) {
+  if(!supa || !data) return;
+  try { await supa.from(table).upsert(data, {onConflict:'id'}); } catch(e) {}
+}
+
+// ── Sync helpers ──
+async function syncToSupabase(table, data) {
+  if(!supa) return;
+  try {
+    await supa.from(table).upsert(data, {onConflict:'id'});
+  } catch(e) { console.warn('Sync error', table, e); }
+}
+
+async function deleteFromSupabase(table, id) {
+  if(!supa) return;
+  try { await supa.from(table).delete().eq('id', id); } catch(e) {}
+}
+
+async function loadFromSupabase() {
+  if(!supa) return false;
+  try {
+    const [k, u, s, kl, f, b] = await Promise.all([
+      supa.from('kosten').select('*').order('created_at', {ascending:false}),
+      supa.from('uren').select('*').order('created_at', {ascending:false}),
+      supa.from('sessies').select('*').order('created_at', {ascending:false}),
+      supa.from('klanten').select('*').order('created_at', {ascending:false}),
+      supa.from('facturen').select('*').order('created_at', {ascending:false}),
+      supa.from('boekingen').select('*').order('created_at', {ascending:false}),
+    ]);
+    // Always override with Supabase data (source of truth)
+    if(k.data) DB.kosten = k.data.length > 0 ? k.data : DB.kosten;
+    if(u.data) DB.uren = u.data.length > 0 ? u.data.map(r => ({
+      ...r, begin: r.begin_tijd, eind: r.eind_tijd
+    })) : DB.uren;
+    if(s.data) DB.sessions = s.data.length > 0 ? s.data.map(r => ({
+      ...r, date: r.session_date, time: r.session_time
+    })) : DB.sessions;
+    if(kl.data) DB.clients = kl.data.length > 0 ? kl.data : DB.clients;
+    if(f.data) DB.invoices = f.data.length > 0 ? f.data.map(r => ({
+      ...r, desc: r.omschrijving, date: r.invoice_date, due: r.due_date
+    })) : DB.invoices;
+    if(b.data) DB.bookings = b.data.length > 0 ? b.data.map(r => ({
+      ...r, date: r.booking_date
+    })) : DB.bookings;
+    saveStore(DB); // Save Supabase data to localStorage as cache
+    return true;
+  } catch(e) { console.warn('Load error', e); return false; }
+}
+
+'use strict';
+
+/* ===========================================================
+   I18N — TRANSLATIONS
+   =========================================================== */
+const I18N = {
+  fr: {
+    dash_title:'Tableau de bord', dash_sub:'Vue d\'ensemble du studio',
+    recent_sessions:'Sessions récentes', revenue_chart:'Revenus par mois',
+    top_clients:'Top clients',
+    sessions_title:'Sessions', sessions_sub:'Gérer les réservations',
+    add_session:'+ Nouvelle session', all:'Toutes', upcoming:'À venir', past:'Passées',
+    clients_title:'Clients', clients_sub:'CRM — Historique & contacts',
+    inv_title:'Facturation', inv_sub:'Factures & paiements',
+    create_invoice:'Créer une facture',
+    booking_sub:'Réserver une session', your_booking:'Votre réservation',
+    your_name:'Votre nom complet', your_email:'Email', your_phone:'Téléphone',
+    choose_formula:'Formule', choose_date:'Date souhaitée',
+    your_message:'Message (optionnel)', send_booking:'Envoyer ma demande',
+    pending_bookings:'Demandes reçues',
+    settings_title:'Paramètres', settings_sub:'Studio & compte',
+    studio_info:'Informations studio', save_settings:'Enregistrer',
+    data_backup:'Sauvegarde des données',
+    backup_desc:'Exportez toutes vos données en JSON.',
+    export_json:'Exporter JSON', import_json:'Importer JSON',
+    reset_desc:'Réinitialiser toutes les données.',
+    reset_all:'Réinitialiser',
+    nav_dash:'Dashboard', nav_sessions:'Sessions', nav_clients:'Clients',
+    nav_invoices:'Factures', nav_booking:'Réserver', nav_settings:'Réglages',
+    nav_btw:'Déclaration TVA', nav_kosten:'Dépenses', nav_uren:'Heures',
+    new_session:'Nouvelle session', fill_details:'Remplissez les informations',
+    client_name:'Nom du client', date:'Date', time:'Heure', formula:'Formule',
+    cancel:'Annuler', save:'Enregistrer',
+    search_client:'Rechercher un client…',
+    toast_saved:'✅ Enregistré avec succès',
+    toast_exported:'📦 Données exportées',
+    toast_imported:'✅ Données importées',
+    toast_reset:'🔄 Données réinitialisées',
+    toast_booking:'✅ Demande de réservation reçue',
+    confirm_reset:'Confirmer la réinitialisation ?',
+    no_sessions:'Aucune session enregistrée.',
+    no_clients:'Aucun client enregistré.',
+    no_invoices:'Aucune facture.',
+    no_bookings:'Aucune demande reçue.',
+    kosten_title:'Dépenses & Achats', kosten_sub:'Toutes les dépenses professionnelles',
+    uren_title:'Suivi des Heures', uren_sub:'Enregistrement pour impôts',
+    btw_title:'Déclaration TVA', btw_sub:'Vue trimestrielle belastingdienst',
+    add_kosten:'+ Ajouter dépense', add_uren:'+ Ajouter heures',
+    download_btw:'🖨️ Télécharger PDF Déclaration',
+    ca_total:'CA Total', ce_mois:'Ce mois', sessions_label:'Sessions',
+    moy_heure:'Moy./heure', totaal_kosten:'Total Dépenses',
+    uitgaven:'dépenses', uren_jaar:'HEURES 2026', van_uren:'% de 1225h',
+    recent_sessions_title:'Sessions récentes',
+  },
+  nl: {
+    dash_title:'Dashboard', dash_sub:'Overzicht van de studio',
+    recent_sessions:'Recente sessies', revenue_chart:'Omzet per maand',
+    top_clients:'Top klanten',
+    sessions_title:'Sessies', sessions_sub:'Reserveringen beheren',
+    add_session:'+ Nieuwe sessie', all:'Alle', upcoming:'Komend', past:'Voorbij',
+    clients_title:'Klanten', clients_sub:'CRM — Geschiedenis & contacten',
+    inv_title:'Facturatie', inv_sub:'Facturen & betalingen',
+    create_invoice:'Factuur aanmaken',
+    booking_sub:'Sessie reserveren', your_booking:'Uw reservering',
+    your_name:'Uw volledige naam', your_email:'E-mail', your_phone:'Telefoon',
+    choose_formula:'Formule', choose_date:'Gewenste datum',
+    your_message:'Bericht (optioneel)', send_booking:'Aanvraag verzenden',
+    pending_bookings:'Ontvangen aanvragen',
+    settings_title:'Instellingen', settings_sub:'Studio & account',
+    studio_info:'Studio informatie', save_settings:'Opslaan',
+    data_backup:'Gegevensback-up',
+    backup_desc:'Exporteer alle gegevens als JSON-back-up.',
+    export_json:'JSON exporteren', import_json:'JSON importeren',
+    reset_desc:'Alle studiogegevens resetten.',
+    reset_all:'Gegevens resetten',
+    nav_dash:'Dashboard', nav_sessions:'Sessies', nav_clients:'Klanten',
+    nav_invoices:'Facturen', nav_booking:'Reserveren', nav_settings:'Instellingen',
+    nav_btw:'BTW Aangifte', nav_kosten:'Kosten', nav_uren:'Uren',
+    new_session:'Nieuwe sessie', fill_details:'Vul de gegevens in',
+    client_name:'Naam klant', date:'Datum', time:'Tijd', formula:'Formule',
+    cancel:'Annuleren', save:'Opslaan',
+    search_client:'Klant zoeken…',
+    toast_saved:'✅ Succesvol opgeslagen',
+    toast_exported:'📦 Gegevens geëxporteerd',
+    toast_imported:'✅ Gegevens geïmporteerd',
+    toast_reset:'🔄 Gegevens gereset',
+    toast_booking:'✅ Reserveringsaanvraag ontvangen',
+    confirm_reset:'Alle gegevens resetten?',
+    no_sessions:'Geen sessies geregistreerd.',
+    no_clients:'Geen klanten geregistreerd.',
+    no_invoices:'Geen facturen.',
+    no_bookings:'Geen aanvragen ontvangen.',
+    kosten_title:'Kosten & Uitgaven', kosten_sub:'Alle zakelijke uitgaven',
+    uren_title:'Uren Registratie', uren_sub:'Bijhouden voor belastingdienst',
+    btw_title:'BTW Aangifte', btw_sub:'Kwartaaloverzicht belastingdienst',
+    add_kosten:'+ Kosten toevoegen', add_uren:'+ Uren toevoegen',
+    download_btw:'🖨️ Download PDF Aangifte',
+    ca_total:'Omzet Totaal', ce_mois:'Deze maand', sessions_label:'Sessies',
+    moy_heure:'Gem./uur', totaal_kosten:'Totaal Kosten',
+    uitgaven:'uitgaven', uren_jaar:'UREN 2026', van_uren:'% van 1225u',
+    recent_sessions_title:'Recente sessies',
+  },
+  es: {
+    dash_title:'Panel de control', dash_sub:'Resumen del estudio',
+    recent_sessions:'Sesiones recientes', revenue_chart:'Ingresos por mes',
+    top_clients:'Mejores clientes',
+    sessions_title:'Sesiones', sessions_sub:'Gestionar reservas',
+    add_session:'+ Nueva sesión', all:'Todas', upcoming:'Próximas', past:'Pasadas',
+    clients_title:'Clientes', clients_sub:'CRM — Historial y contactos',
+    inv_title:'Facturación', inv_sub:'Facturas y pagos',
+    create_invoice:'Crear factura',
+    booking_sub:'Reservar una sesión', your_booking:'Su reserva',
+    your_name:'Su nombre completo', your_email:'Correo electrónico', your_phone:'Teléfono',
+    choose_formula:'Fórmula', choose_date:'Fecha deseada',
+    your_message:'Mensaje (opcional)', send_booking:'Enviar solicitud',
+    pending_bookings:'Solicitudes recibidas',
+    settings_title:'Configuración', settings_sub:'Estudio y cuenta',
+    studio_info:'Información del estudio', save_settings:'Guardar',
+    data_backup:'Copia de seguridad',
+    backup_desc:'Exporte todos sus datos en JSON.',
+    export_json:'Exportar JSON', import_json:'Importar JSON',
+    reset_desc:'Restablecer todos los datos.',
+    reset_all:'Restablecer',
+    nav_dash:'Panel', nav_sessions:'Sesiones', nav_clients:'Clientes',
+    nav_invoices:'Facturas', nav_booking:'Reservar', nav_settings:'Ajustes',
+    nav_btw:'Declaración IVA', nav_kosten:'Gastos', nav_uren:'Horas',
+    new_session:'Nueva sesión', fill_details:'Complete los datos',
+    client_name:'Nombre del cliente', date:'Fecha', time:'Hora', formula:'Fórmula',
+    cancel:'Cancelar', save:'Guardar',
+    search_client:'Buscar cliente…',
+    toast_saved:'✅ Guardado correctamente',
+    toast_exported:'📦 Datos exportados',
+    toast_imported:'✅ Datos importados',
+    toast_reset:'🔄 Datos restablecidos',
+    toast_booking:'✅ Solicitud de reserva recibida',
+    confirm_reset:'¿Confirmar restablecimiento?',
+    no_sessions:'No hay sesiones registradas.',
+    no_clients:'No hay clientes registrados.',
+    no_invoices:'No hay facturas.',
+    no_bookings:'No hay solicitudes recibidas.',
+    kosten_title:'Gastos & Compras', kosten_sub:'Todos los gastos empresariales',
+    uren_title:'Registro de Horas', uren_sub:'Seguimiento para hacienda',
+    btw_title:'Declaración IVA', btw_sub:'Resumen trimestral hacienda',
+    add_kosten:'+ Añadir gasto', add_uren:'+ Añadir horas',
+    download_btw:'🖨️ Descargar PDF Declaración',
+    ca_total:'Ingresos Total', ce_mois:'Este mes', sessions_label:'Sesiones',
+    moy_heure:'Prom./hora', totaal_kosten:'Gastos Totales',
+    uitgaven:'gastos', uren_jaar:'HORAS 2026', van_uren:'% de 1225h',
+    recent_sessions_title:'Sesiones recientes',
+  },
+};
+
+let currentLang = localStorage.getItem('as_lang') || 'fr';
+
+function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+function setLang(lang){
+  currentLang = lang;
+  localStorage.setItem('as_lang', lang);
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent === lang.toUpperCase()));
+  document.querySelectorAll('[data-i18n]').forEach(el => { const k = el.getAttribute('data-i18n'); if(I18N[lang][k]) el.textContent = I18N[lang][k]; });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { const k = el.getAttribute('data-i18n-placeholder'); if(I18N[lang][k]) el.placeholder = I18N[lang][k]; });
+  // Mettre à jour les labels de navigation
+  document.querySelectorAll('[data-i18n-nav]').forEach(btn => {
+    const k = btn.getAttribute('data-i18n-nav');
+    const span = btn.querySelector('span');
+    if(span && I18N[lang] && I18N[lang][k]) span.textContent = I18N[lang][k].replace(/[📊📸⏱💸👥📄⚙️📈📋]/gu,'').trim();
+  });
+  if(typeof DB !== 'undefined') renderAll();
+  // Update logout label
+  const logoutLabel = document.getElementById('nav-logout-label');
+  if(logoutLabel) logoutLabel.textContent = lang==='nl'?'Uitloggen':lang==='es'?'Cerrar sesión':'Déconnexion';
+}
+
+/* ===========================================================
+   DATA STORE
+   =========================================================== */
+// ── Données initiales Akoua Studio ──
+const INIT_KOSTEN = [
+  {id:'k1',datum:'28/04/2026',winkel:'Praxis Etten-Leur',omsch:'Verf Muur Basic 2.5L + Promo Mask Base + BS Polymax Hightack (4x)',cat:'Studio / Verf & Materiaal',bedrag:114.37,btw:19.85,bon:true},
+  {id:'k2',datum:'28/04/2026',winkel:'Karwei Roosendaal',omsch:'Handzaag Stanley + Lattenbanden (2x) + Montageset fotostudio + Lattenband Grondrkt Eiken',cat:'Studio / Inrichting & Materiaal',bedrag:359.27,btw:62.35,bon:true},
+  {id:'k3',datum:'28/04/2026',winkel:'IKEA Breda',omsch:'TANEBFO + HERRAKRA + MULLSJÖ bureau + MICKE bureau 105x50 + STOENSE stoelen (2x) + MÖRUM + VITTSJÖ stallingkast',cat:'Studio / Meubilair & Inrichting',bedrag:772.92,btw:134.14,bon:true},
+  {id:'k4',datum:'26/04/2026',winkel:'Bol.com',omsch:'LED Strip COB 10 Meter 2700K Warm Wit 24V IP65 + Mi-Light Touch Wandbediening',cat:'Studio / Verlichting',bedrag:98.29,btw:0,bon:true},
+  {id:'k5',datum:'26/04/2026',winkel:'Bol.com',omsch:'Vrijstaande Paskamer met Gordijn 100x100x200cm - Draagbare Kleedruimte',cat:'Studio / Inrichting',bedrag:149.00,btw:0,bon:true},
+  {id:'k6',datum:'26/04/2026',winkel:'Bol.com',omsch:'PIXETOOL Green Screen 2.8x1.8M + Fotostudio Set - Greenscreen, Softbox, Lamphouders, LED',cat:'Studio / Fotomateriaal',bedrag:109.95,btw:0,bon:true},
+  {id:'k7',datum:'26/04/2026',winkel:'Bol.com',omsch:'Studio ME Ringlamp met Statief 18 inch - Ring Light Zwart - TikTok Lamp + Afstandsbediening',cat:'Studio / Fotomateriaal',bedrag:46.99,btw:0,bon:true},
+  {id:'k8',datum:'20/04/2026',winkel:'P.C. van Overveld',omsch:'Huur kantoorruimte Keulsveld 17 kantoor 4 — April 2026 (€500/maand, all-in gas/water/elektra)',cat:'Huur Studio',bedrag:500.00,btw:0,bon:true},
+  {id:'k9',datum:'01/05/2026',winkel:'Action Roosendaal',omsch:'Aroma diffuser + afvalbak + moodlight (2x) + LED strip Baltimore 10m RGB (3x) + bloempotten metaal (3x) + ficusplant zwart (3x) + orchidée mini + wanddecoratie 40x50cm + lamp metaal (2x) + pedaalemmer bamboe + stekkerdoos 4-voudig (2x) + spiegel gouden rand + deco zullen hout/metaal + kast 3 compartimenten + poef + kussenhoes teddy (2x) + kussen blauwprint + kussen streep + klok hygro/temp + ledstrip 30m RGBIC',cat:'Studio / Inrichting & Decoratie',bedrag:293.44,btw:50.93,bon:true},
+];
+
+const INIT_UREN = [
+  {id:'u1',datum:'28/04/2026',activiteit:'Schilderen & Inrichten Studio',begin:'09:00',eind:'20:00',uren:11,note:'Eerste werkdag in het studio'},
+  {id:'u2',datum:'29/04/2026',activiteit:'Schilderen & Inrichten Studio',begin:'09:00',eind:'17:30',uren:8.5,note:'Verdere inrichting studio'},
+];
+
+function loadStore(){
+  return {
+    sessions:  JSON.parse(localStorage.getItem('as_sessions')  || '[]'),
+    clients:   JSON.parse(localStorage.getItem('as_clients')   || '[]'),
+    invoices:  JSON.parse(localStorage.getItem('as_invoices')  || '[]'),
+    bookings:  JSON.parse(localStorage.getItem('as_bookings')  || '[]'),
+    kosten:    JSON.parse(localStorage.getItem('as_kosten')    || JSON.stringify(INIT_KOSTEN)),
+    uren:      JSON.parse(localStorage.getItem('as_uren')      || JSON.stringify(INIT_UREN)),
+    settings:  JSON.parse(localStorage.getItem('as_settings')  || JSON.stringify({
+      name: 'Akoua Studio',
+      address: 'Keulsveld 17, kantoor 4',
+      city: '4705 RS Roosendaal',
+      email: 'akouastudio@gmail.com',
+      phone: '06 27 37 48 13',
+      website: 'akouastudio.nl',
+      kvk: '42042214',
+      btw: 'NL005451884B82',
+      iban: '',
+      monthlyGoal: 9900,
+    })),
+  };
+}
+function saveStore(store){
+  localStorage.setItem('as_sessions',  JSON.stringify(store.sessions));
+  localStorage.setItem('as_clients',   JSON.stringify(store.clients));
+  localStorage.setItem('as_invoices',  JSON.stringify(store.invoices));
+  localStorage.setItem('as_bookings',  JSON.stringify(store.bookings));
+  localStorage.setItem('as_kosten',    JSON.stringify(store.kosten));
+  localStorage.setItem('as_uren',      JSON.stringify(store.uren));
+  localStorage.setItem('as_settings',  JSON.stringify(store.settings));
+}
+let DB = loadStore();
+
+/* ===========================================================
+   UTILS
+   =========================================================== */
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function fmt(n){ return '€' + Number(n).toFixed(2).replace('.', ','); }
+function fmtDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString(currentLang === 'nl' ? 'nl-NL' : currentLang === 'es' ? 'es-ES' : 'fr-FR', {day:'2-digit',month:'short',year:'numeric'}); }
+function calcTTC(ttc, tvaRate=21){ const ht = ttc/(1+tvaRate/100); return {ht:ht, tva:ttc-ht, ttc:ttc}; }
+function initials(name){ return name.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase(); }
+
+function toast(msg, type='success'){
+  const c = document.getElementById('toast-container');
+  const d = document.createElement('div');
+  d.className = 'toast ' + type;
+  d.textContent = msg;
+  c.appendChild(d);
+  setTimeout(() => d.remove(), 3000);
+}
+
+/* ===========================================================
+   NAVIGATION
+   =========================================================== */
+function goPage(name){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  // Finance sub-pages highlight the Finance button
+  const financePages = ['btw','kosten','uren'];
+  if(financePages.includes(name)){
+    document.getElementById('nav-finance').classList.add('active');
+  } else {
+    const navEl = document.getElementById('nav-' + name);
+    if(navEl) navEl.classList.add('active');
+  }
+  renderPage(name);
+  window.scrollTo(0,0);
+}
+function renderPage(name){
+  if(name==='dashboard') renderDashboard();
+  if(name==='sessions')  renderSessions();
+  if(name==='clients')   renderClients();
+  if(name==='invoices')  renderInvoices();
+  if(name==='booking')   renderBookings();
+}
+function renderAll(){ renderDashboard(); renderSessions(); renderClients(); renderInvoices(); renderBookings(); renderKosten(); renderUren(); }
+
+/* ===========================================================
+   MODALS
+   =========================================================== */
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  if(id==='modal-session') prefillSessionDate();
+  if(id==='modal-invoice') prefillInvoiceDate();
+  updateClientDatalist();
+}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); });
+});
+
+function prefillSessionDate(){
+  document.getElementById('s-date').value = new Date().toISOString().split('T')[0];
+}
+function prefillInvoiceDate(){
+  const today = new Date();
+  document.getElementById('inv-date').value = today.toISOString().split('T')[0];
+  const due = new Date(today); due.setDate(due.getDate()+14);
+  document.getElementById('inv-due').value = due.toISOString().split('T')[0];
+}
+function updateClientDatalist(){
+  const dl = document.getElementById('clients-datalist');
+  const dl2 = document.getElementById('inv-clients-datalist');
+  if(dl) dl.innerHTML = DB.clients.map(c=>`<option value="${c.name}">`).join('');
+  if(dl2) dl2.innerHTML = DB.clients.map(c=>`<option value="${c.name}">`).join('');
+}
+
+/* ===========================================================
+   TVA CALCULATORS
+   =========================================================== */
+function calcTVA(){
+  const ttc = parseFloat(document.getElementById('s-price').value);
+  if(isNaN(ttc)){
+    ['tva-ht','tva-amount','tva-ttc'].forEach(id => document.getElementById(id).textContent='—');
+    return;
+  }
+  const r = calcTTC(ttc);
+  document.getElementById('tva-ht').textContent = fmt(r.ht);
+  document.getElementById('tva-amount').textContent = fmt(r.tva);
+  document.getElementById('tva-ttc').textContent = fmt(r.ttc);
+}
+function calcInvTVA(){
+  const ttc = parseFloat(document.getElementById('inv-price').value);
+  const rate = parseFloat(document.getElementById('inv-tva').value);
+  if(isNaN(ttc)){
+    ['inv-tva-ht','inv-tva-amount','inv-tva-ttc'].forEach(id => document.getElementById(id).textContent='—');
+    return;
+  }
+  const r = calcTTC(ttc, rate);
+  document.getElementById('inv-tva-ht').textContent = fmt(r.ht);
+  document.getElementById('inv-tva-amount').textContent = fmt(r.tva);
+  document.getElementById('inv-tva-ttc').textContent = fmt(r.ttc);
+}
+function autoFillPrice(){
+  const sel = document.getElementById('s-formula');
+  const opt = sel.options[sel.selectedIndex];
+  const price = opt.getAttribute('data-price');
+  const hours = opt.getAttribute('data-hours');
+  if(price) { document.getElementById('s-price').value = price; calcTVA(); }
+  if(hours) document.getElementById('s-hours').value = hours;
+}
+
+/* ===========================================================
+   SESSIONS — SAVE & RENDER
+   =========================================================== */
+let sessionFilter = 'all';
+function filterSessions(f){
+  sessionFilter = f;
+  document.querySelectorAll('#page-sessions .toggle-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['all','upcoming','past'][i]===f);
+  });
+  renderSessions();
+}
+
+function saveSession(){
+  const name  = document.getElementById('s-client').value.trim();
+  const email = document.getElementById('s-email').value.trim();
+  const phone = document.getElementById('s-phone').value.trim();
+  const date  = document.getElementById('s-date').value;
+  const time  = document.getElementById('s-time').value;
+  const formula = document.getElementById('s-formula').value;
+  const price = parseFloat(document.getElementById('s-price').value) || 0;
+  const hours = parseFloat(document.getElementById('s-hours').value) || 0;
+  const status = document.getElementById('s-status').value;
+  const notes = document.getElementById('s-notes').value.trim();
+  if(!name||!date) return toast('Nom et date requis', 'error');
+  const tvaData = calcTTC(price);
+  const session = { id:uid(), name, email, phone, date, time, formula, price, hours, status, notes,
+    ht:tvaData.ht, tva:tvaData.tva, createdAt:new Date().toISOString() };
+  DB.sessions.unshift(session);
+  upsertClient(name, email, phone, session);
+  saveStore(DB);
+  syncToSupabase('sessies', [{...session, session_date: session.date, session_time: session.time}]);
+  closeModal('modal-session');
+  clearSessionForm();
+  toast(t('toast_saved'));
+  // Mettre à jour les labels de navigation
+  document.querySelectorAll('[data-i18n-nav]').forEach(btn => {
+    const k = btn.getAttribute('data-i18n-nav');
+    const span = btn.querySelector('span');
+    if(span && I18N[lang] && I18N[lang][k]) span.textContent = I18N[lang][k].replace(/[📊📸⏱💸👥📄⚙️📈📋]/gu,'').trim();
+  });
+  renderAll();
+}
+
+function clearSessionForm(){
+  ['s-client','s-email','s-phone','s-time','s-notes'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('s-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('s-formula').value='';
+  document.getElementById('s-price').value='';
+  document.getElementById('s-hours').value='';
+  document.getElementById('s-status').value='confirmed';
+  ['tva-ht','tva-amount','tva-ttc'].forEach(id => document.getElementById(id).textContent='—');
+}
+
+function renderSessions(){
+  const list = document.getElementById('sessions-list');
+  let sessions = [...DB.sessions].sort((a,b) => new Date(b.date)-new Date(a.date));
+  const today = new Date(); today.setHours(0,0,0,0);
+  if(sessionFilter==='upcoming') sessions = sessions.filter(s => new Date(s.date) >= today);
+  if(sessionFilter==='past') sessions = sessions.filter(s => new Date(s.date) < today);
+  if(!sessions.length){ list.innerHTML=`<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">${t('no_sessions')}</div></div>`; return; }
+  list.innerHTML = sessions.map(s => `
+    <div class="list-item" onclick="openSessionDetail('${s.id}')">
+      <div class="list-item-avatar">${initials(s.name)}</div>
+      <div class="list-item-body">
+        <div class="list-item-title">${s.name}</div>
+        <div class="list-item-sub">${s.formula || '—'} · ${s.hours}h</div>
+      </div>
+      <div class="list-item-right">
+        <div class="list-item-amount">${fmt(s.price)}</div>
+        <div class="list-item-date">${fmtDate(s.date)}</div>
+        <div style="margin-top:4px;">${statusBadge(s.status)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function statusBadge(s){
+  if(s==='confirmed') return '<span class="badge badge-green">✅ Confirmé</span>';
+  if(s==='pending')   return '<span class="badge badge-gold">⏳ Attente</span>';
+  if(s==='paid')      return '<span class="badge badge-green">💚 Payé</span>';
+  if(s==='overdue')   return '<span class="badge badge-red">❌ Retard</span>';
+  if(s==='cancelled') return '<span class="badge badge-red">❌ Annulé</span>';
+  return `<span class="badge badge-grey">${s}</span>`;
+}
+
+function openSessionDetail(id){
+  const s = DB.sessions.find(x=>x.id===id);
+  if(!s) return;
+  document.getElementById('modal-session-detail-content').innerHTML = `
+    <div class="modal-title">${s.name}</div>
+    <div class="modal-sub">${s.formula || '—'} · ${fmtDate(s.date)} ${s.time||''}</div>
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:.78rem;color:var(--grey);">TTC</span>
+        <span style="color:var(--gold);font-family:var(--font-display);font-size:1.2rem;">${fmt(s.price)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--grey);margin-bottom:4px;">
+        <span>HT</span><span>${fmt(s.ht||0)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--grey);">
+        <span>BTW 21%</span><span>${fmt(s.tva||0)}</span>
+      </div>
+    </div>
+    ${s.email ? `<p style="font-size:.78rem;color:var(--grey);margin-bottom:4px;">📧 ${s.email}</p>` : ''}
+    ${s.phone ? `<p style="font-size:.78rem;color:var(--grey);margin-bottom:4px;">📱 ${s.phone}</p>` : ''}
+    ${s.notes ? `<div class="card" style="margin-top:8px;"><p style="font-size:.78rem;color:var(--grey-light);">${s.notes}</p></div>` : ''}
+    <div style="margin-top:16px;">${statusBadge(s.status)}</div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-outline btn-sm" style="flex:1;" onclick="createInvoiceFromSession('${s.id}')">
+        📄 Facturer
+      </button>
+      <button class="btn btn-danger btn-sm" onclick="deleteSession('${s.id}')">🗑</button>
+    </div>`;
+  openModal('modal-session-detail');
+}
+
+function deleteSession(id){
+  if(!confirm('Supprimer cette session ?')) return;
+  DB.sessions = DB.sessions.filter(s=>s.id!==id);
+  saveStore(DB);
+  deleteFromSupabase('sessies', id);
+  closeModal('modal-session-detail');
+  // Mettre à jour les labels de navigation
+  document.querySelectorAll('[data-i18n-nav]').forEach(btn => {
+    const k = btn.getAttribute('data-i18n-nav');
+    const span = btn.querySelector('span');
+    if(span && I18N[lang] && I18N[lang][k]) span.textContent = I18N[lang][k].replace(/[📊📸⏱💸👥📄⚙️📈📋]/gu,'').trim();
+  });
+  renderAll();
+}
+
+function createInvoiceFromSession(sid){
+  const s = DB.sessions.find(x=>x.id===sid);
+  closeModal('modal-session-detail');
+  if(!s) return;
+  setTimeout(() => {
+    openModal('modal-invoice');
+    document.getElementById('inv-client').value = s.name;
+    document.getElementById('inv-desc').value = (s.formula||'Session') + (s.hours ? ` (${s.hours}h)` : '');
+    document.getElementById('inv-price').value = s.price;
+    calcInvTVA();
+  }, 300);
+}
+
+/* ===========================================================
+   CLIENTS — SAVE & RENDER
+   =========================================================== */
+function upsertClient(name, email, phone, session){
+  let client = DB.clients.find(c => c.name.toLowerCase()===name.toLowerCase());
+  if(!client){
+    client = { id:uid(), name, email:email||'', phone:phone||'', sessions:[], totalSpent:0, createdAt:new Date().toISOString() };
+    DB.clients.push(client);
+  }
+  if(email && !client.email) client.email = email;
+  if(phone && !client.phone) client.phone = phone;
+  client.sessions.push({ date:session.date, formula:session.formula, price:session.price, id:session.id });
+  client.totalSpent = (client.totalSpent||0) + session.price;
+}
+
+function renderClients(){
+  const list = document.getElementById('clients-list');
+  const q = (document.getElementById('client-search')?.value||'').toLowerCase();
+  let clients = DB.clients.filter(c => !q || c.name.toLowerCase().includes(q));
+  clients.sort((a,b) => (b.totalSpent||0)-(a.totalSpent||0));
+  if(!clients.length){ list.innerHTML=`<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">${t('no_clients')}</div></div>`; return; }
+  list.innerHTML = clients.map(c => `
+    <div class="list-item" onclick="openClientDetail('${c.id}')">
+      <div class="list-item-avatar">${initials(c.name)}</div>
+      <div class="list-item-body">
+        <div class="list-item-title">${c.name}</div>
+        <div class="list-item-sub">${c.sessions.length} session${c.sessions.length>1?'s':''} · ${c.email||'—'}</div>
+      </div>
+      <div class="list-item-right">
+        <div class="list-item-amount">${fmt(c.totalSpent||0)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function openClientDetail(id){
+  const c = DB.clients.find(x=>x.id===id);
+  if(!c) return;
+  const history = c.sessions.slice().reverse().map(s=>`
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:.78rem;">
+      <span style="color:var(--grey-light);">${fmtDate(s.date)} — ${s.formula||'Session'}</span>
+      <span style="color:var(--gold);">${fmt(s.price)}</span>
+    </div>`).join('');
+  document.getElementById('modal-client-content').innerHTML = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="width:56px;height:56px;border-radius:50%;background:var(--gold-dim);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-family:var(--font-display);font-size:1.4rem;color:var(--gold);">${initials(c.name)}</div>
+      <div class="modal-title">${c.name}</div>
+      <div style="font-size:.72rem;color:var(--grey);">Client depuis ${fmtDate(c.createdAt)}</div>
+    </div>
+    <div class="stats-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div class="stat-card"><div class="stat-value">${c.sessions.length}</div><div class="stat-label">${t('sessions_label')}</div></div>
+      <div class="stat-card"><div class="stat-value" style="font-size:1.1rem;">${fmt(c.totalSpent||0)}</div><div class="stat-label">Total</div></div>
+      <div class="stat-card"><div class="stat-value" style="font-size:1.1rem;">${fmt((c.totalSpent||0)/Math.max(c.sessions.length,1))}</div><div class="stat-label">Moy.</div></div>
+    </div>
+    ${c.email ? `<p style="font-size:.78rem;color:var(--grey);margin-bottom:4px;">📧 ${c.email}</p>` : ''}
+    ${c.phone ? `<p style="font-size:.78rem;color:var(--grey);margin-bottom:12px;">📱 ${c.phone}</p>` : ''}
+    <p class="section-title">Historique</p>
+    ${history || '<p style="font-size:.78rem;color:var(--grey);">Aucune session.</p>'}`;
+  openModal('modal-client');
+}
+
+/* ===========================================================
+   INVOICES — SAVE & RENDER & PRINT
+   =========================================================== */
+let invoiceCounter = parseInt(localStorage.getItem('as_inv_counter')||'1');
+
+function saveInvoice(){
+  const client  = document.getElementById('inv-client').value.trim();
+  const clientAddress = document.getElementById('inv-client-address').value.trim();
+  const date    = document.getElementById('inv-date').value;
+  const due     = document.getElementById('inv-due').value;
+  const desc    = document.getElementById('inv-desc').value.trim();
+  const price   = parseFloat(document.getElementById('inv-price').value)||0;
+  const tvaRate = parseFloat(document.getElementById('inv-tva').value)||21;
+  const status  = document.getElementById('inv-status').value;
+  const mollie  = document.getElementById('inv-mollie').value.trim();
+  if(!client||!desc) return toast('Client et description requis', 'error');
+  const r = calcTTC(price, tvaRate);
+  const year = new Date().getFullYear();
+  const num  = `AS-${year}-${String(invoiceCounter).padStart(3,'0')}`;
+  invoiceCounter++;
+  localStorage.setItem('as_inv_counter', String(invoiceCounter));
+  const inv = { id:uid(), num, client, clientAddress, date, due, desc, price, tvaRate, ht:r.ht, tva:r.tva, status, mollie, createdAt:new Date().toISOString() };
+  DB.invoices.unshift(inv);
+  saveStore(DB);
+  syncToSupabase('facturen', [{...inv, omschrijving: inv.desc, invoice_date: inv.date, due_date: inv.due}]);
+  closeModal('modal-invoice');
+  clearInvoiceForm();
+  toast(t('toast_saved'));
+  // Mettre à jour les labels de navigation
+  document.querySelectorAll('[data-i18n-nav]').forEach(btn => {
+    const k = btn.getAttribute('data-i18n-nav');
+    const span = btn.querySelector('span');
+    if(span && I18N[lang] && I18N[lang][k]) span.textContent = I18N[lang][k].replace(/[📊📸⏱💸👥📄⚙️📈📋]/gu,'').trim();
+  });
+  renderAll();
+}
+
+function clearInvoiceForm(){
+  ['inv-client','inv-client-address','inv-desc','inv-mollie'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('inv-price').value='';
+  document.getElementById('inv-tva').value='21';
+  document.getElementById('inv-status').value='pending';
+  ['inv-tva-ht','inv-tva-amount','inv-tva-ttc'].forEach(id=>document.getElementById(id).textContent='—');
+}
+
+function renderInvoices(){
+  const list = document.getElementById('invoices-list');
+  if(!DB.invoices.length){ list.innerHTML=`<div class="empty"><div class="empty-icon">📄</div><div class="empty-text">${t('no_invoices')}</div></div>`; return; }
+  list.innerHTML = DB.invoices.map(inv => `
+    <div class="list-item">
+      <div class="list-item-avatar" style="font-size:.65rem;font-family:var(--font-body);width:48px;">${inv.num}</div>
+      <div class="list-item-body">
+        <div class="list-item-title">${inv.client}</div>
+        <div class="list-item-sub">${inv.desc}</div>
+      </div>
+      <div class="list-item-right">
+        <div class="list-item-amount">${fmt(inv.price)}</div>
+        <div class="list-item-date">${fmtDate(inv.date)}</div>
+        <div style="margin-top:4px;">${statusBadge(inv.status)}</div>
+        <div class="btn-row" style="margin-top:6px;">
+          <button class="btn btn-outline btn-sm" style="padding:5px 8px;font-size:.62rem;" onclick="printInvoice('${inv.id}')">📥 PDF</button>
+          ${inv.mollie ? `<a href="${inv.mollie}" target="_blank" class="btn btn-gold btn-sm" style="padding:5px 8px;font-size:.62rem;">💳 Payer</a>` : ''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function printInvoice(id){
+  const inv = DB.invoices.find(x=>x.id===id);
+  const s = DB.settings;
+  if(!inv) return;
+  const wrapper = document.getElementById('print-wrapper');
+  const box = document.getElementById('invoice-print');
+  box.style.display='block';
+  wrapper.style.display='block';
+  box.innerHTML = `
+    <div class="inv-header">
+      <div>
+        <div class="inv-brand">${s.name||'Akoua Studio'}</div>
+        <div class="inv-brand-sub">Photo · Audio · Masterclass</div>
+        <div style="font-size:11px;color:#555;margin-top:4px;line-height:1.6;">
+          ${s.address||'Keulsveld 17, kantoor 4'}<br>
+          ${s.email||'akouastudio@gmail.com'}<br>
+          ${s.phone||'06 27 37 48 13'}<br>
+          ${s.kvk?`KVK: ${s.kvk}`:'KVK: 42042214'}<br>
+          ${s.btw?`BTW: ${s.btw}`:'BTW: NL005451884B82'}
+        </div>
+      </div>
+      <div class="inv-meta">
+        <strong>FACTURE</strong>
+        N° ${inv.num}<br>
+        Date : ${fmtDate(inv.date)}<br>
+        Échéance : ${fmtDate(inv.due)}<br><br>
+        <span class="inv-status-badge">${inv.status==='paid'?'✅ Payée':'⏳ En attente'}</span>
+      </div>
+    </div>
+    <div class="inv-parties">
+      <div>
+        <div class="inv-party-label">DE</div>
+        <div class="inv-party-name">${s.name||'Akoua Studio'}</div>
+        <div class="inv-party-detail">
+          ${s.address||'Keulsveld 17, kantoor 4'}<br>
+          IBAN: ${s.iban||'—'}
+        </div>
+      </div>
+      <div>
+        <div class="inv-party-label">À</div>
+        <div class="inv-party-name">${inv.client}</div>
+        <div class="inv-party-detail">${(inv.clientAddress||'').replace(/\n/g,'<br>') || '—'}</div>
+      </div>
+    </div>
+    <table class="inv-table">
+      <thead><tr><th>Description</th><th>HT</th><th>TVA (${inv.tvaRate}%)</th><th>TTC</th></tr></thead>
+      <tbody><tr>
+        <td>${inv.desc}</td>
+        <td>€${Number(inv.ht).toFixed(2)}</td>
+        <td>€${Number(inv.tva).toFixed(2)}</td>
+        <td>€${Number(inv.price).toFixed(2)}</td>
+      </tr></tbody>
+    </table>
+    <div class="inv-totals">
+      <div class="inv-totals-row"><span>Sous-total HT</span><span>€${Number(inv.ht).toFixed(2)}</span></div>
+      <div class="inv-totals-row"><span>TVA ${inv.tvaRate}%</span><span>€${Number(inv.tva).toFixed(2)}</span></div>
+      <div class="inv-totals-row total"><span>TOTAL TTC</span><span>€${Number(inv.price).toFixed(2)}</span></div>
+    </div>
+    ${inv.mollie ? `<div style="margin-top:20px;padding:12px;background:#fff8e8;border:1px solid #c9a84c;border-radius:6px;font-size:11px;">
+      💳 Paiement en ligne : <a href="${inv.mollie}" style="color:#c9a84c;">${inv.mollie}</a>
+    </div>` : ''}
+    <div class="inv-footer">
+      IBAN : ${s.iban||'—'} · ${s.name||'Akoua Studio'} · ${s.email||'akouastudio@gmail.com'}<br>
+      Merci de votre confiance.
+    </div>`;
+  // Générer PDF téléchargeable
+  const s2 = DB.settings;
+  const htmlPDF = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>Factuur ${inv.num}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;padding:32px;max-width:700px;margin:0 auto;color:#111;font-size:12px;}
+.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #C9A84C;}
+.brand{font-family:Georgia,serif;font-size:20px;font-weight:700;color:#C9A84C;letter-spacing:2px;}
+.brand-sub{font-size:8px;letter-spacing:3px;color:#888;text-transform:uppercase;margin-top:2px;}
+.inv-num{font-size:22px;font-weight:900;color:#C9A84C;text-align:right;}
+table{width:100%;border-collapse:collapse;margin:14px 0;}
+th{background:#f5f5f5;padding:8px 10px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#666;border-bottom:1px solid #eee;}
+td{padding:8px 10px;border-bottom:1px solid #f5f5f5;}
+.total-box{background:#fff8e8;border:2px solid #C9A84C;border-radius:8px;padding:14px;margin:14px 0;text-align:right;}
+.total-amount{font-size:22px;font-weight:800;color:#C9A84C;}
+.footer{text-align:center;font-size:8px;color:#aaa;margin-top:20px;padding-top:10px;border-top:1px solid #eee;}
+@media print{body{padding:20px}}
+</style></head><body>
+<div class="inv-header">
+  <div>
+    <div class="brand">AKOUA STUDIO</div>
+    <div class="brand-sub">Photo · Audio · Masterclass</div>
+    <div style="margin-top:8px;font-size:10px;color:#555;line-height:1.8;">
+      ${s2.address||'Keulsveld 17, kantoor 4'}<br>
+      4705 RS Roosendaal<br>
+      ${s2.email||'akouastudio@gmail.com'}<br>
+      ${s2.phone||'06 27 37 48 13'}<br>
+      KVK: ${s2.kvk||'42042214'}<br>
+      BTW: ${s2.btw||'NL005451884B82'}
+    </div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:10px;font-weight:700;color:#111;">FACTUUR</div>
+    <div class="inv-num">${inv.num}</div>
+    <div style="font-size:10px;color:#888;margin-top:6px;">Datum: ${fmtDate(inv.date)}</div>
+    <div style="margin-top:6px;background:#fff8e8;border:1px solid #C9A84C;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;color:#C9A84C;display:inline-block;">
+      ${inv.status==='paid'?'✅ Betaald':'⏳ Te betalen'}
+    </div>
+  </div>
+</div>
+<div style="margin-bottom:16px;">
+  <div style="font-size:8px;text-transform:uppercase;letter-spacing:2px;color:#888;margin-bottom:4px;">Gefactureerd aan</div>
+  <div style="font-size:14px;font-weight:700;">${inv.client}</div>
+</div>
+<table>
+  <thead><tr><th>Omschrijving</th><th>Excl. BTW</th><th>BTW 21%</th><th>Incl. BTW</th></tr></thead>
+  <tbody><tr>
+    <td><strong>${inv.desc}</strong></td>
+    <td>€${Number(inv.ht).toFixed(2)}</td>
+    <td>€${Number(inv.tva).toFixed(2)}</td>
+    <td style="font-weight:700;">€${Number(inv.price).toFixed(2)}</td>
+  </tr></tbody>
+</table>
+<div class="total-box">
+  <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:4px;">Totaal te betalen</div>
+  <div class="total-amount">€${Number(inv.price).toFixed(2)}</div>
+</div>
+${inv.mollie ? `<div style="padding:10px;background:#f0fff8;border:1px solid #4caf7d;border-radius:6px;font-size:11px;margin-bottom:12px;">
+  💳 Betaal direct: <a href="${inv.mollie}" style="color:#2e7d32;font-weight:700;">${inv.mollie}</a>
+</div>` : ''}
+<div class="footer">
+  IBAN: ${s2.iban||'—'} · Akoua Studio · ${s2.email||'akouastudio@gmail.com'} · akouastudio.nl<br>
+  KVK 42042214 · BTW NL005451884B82 · Bedankt voor uw vertrouwen!
+</div>
+</body></html>`;
+
+  const blob = new Blob([htmlPDF], {type: 'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'Factuur_' + inv.num + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('✅ Factuur gedownload!');
+}
+
+/* ===========================================================
+   BOOKING — PUBLIC FORM
+   =========================================================== */
+function submitBooking(){
+  // Vérifier que la date n'est pas un lundi (0=dim, 1=lun)
+  const dateVal = document.getElementById('book-date').value;
+  if(dateVal){
+    const day = new Date(dateVal).getDay();
+    if(day === 1){ toast('⚠️ Le lundi est fermé. Choisissez un autre jour.','error'); return; }
+    if(day === 0){ toast('⚠️ Le dimanche est fermé. Choisissez du mardi au samedi.','error'); return; }
+  }
+  const name    = document.getElementById('book-name').value.trim();
+  const email   = document.getElementById('book-email').value.trim();
+  const phone   = document.getElementById('book-phone').value.trim();
+  const formula = document.getElementById('book-formula').value;
+  const date    = document.getElementById('book-date').value;
+  const message = document.getElementById('book-message').value.trim();
+  if(!name||!formula||!date) return toast('Nom, formule et date requis', 'error');
+  const booking = { id:uid(), name, email, phone, formula, date, message, status:'pending', createdAt:new Date().toISOString() };
+  DB.bookings.unshift(booking);
+  saveStore(DB);
+  ['book-name','book-email','book-phone','book-message'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('book-formula').value='';
+  document.getElementById('book-date').value='';
+  toast(t('toast_booking'));
+  renderBookings();
+}
+
+function renderBookings(){
+  const list = document.getElementById('bookings-list');
+  if(!DB.bookings.length){ list.innerHTML=`<div class="empty"><div class="empty-icon">📬</div><div class="empty-text">${t('no_bookings')}</div></div>`; return; }
+  list.innerHTML = DB.bookings.map(b => `
+    <div class="list-item">
+      <div class="list-item-avatar">${initials(b.name)}</div>
+      <div class="list-item-body">
+        <div class="list-item-title">${b.name}</div>
+        <div class="list-item-sub">${b.formula} · ${fmtDate(b.date)}</div>
+      </div>
+      <div class="list-item-right">
+        ${statusBadge(b.status)}
+        <div class="btn-row" style="margin-top:6px;">
+          <button class="btn btn-gold btn-sm" style="padding:5px 8px;font-size:.62rem;" onclick="acceptBooking('${b.id}')">✓ Confirmer</button>
+          <button class="btn btn-ghost btn-sm" style="padding:5px 8px;font-size:.62rem;" onclick="deleteBooking('${b.id}')">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function acceptBooking(id){
+  const b = DB.bookings.find(x=>x.id===id);
+  if(!b) return;
+  const priceMap = {'Proef Sessie — €15':15,'Starter — €25':25,'Signature — €45':45,'Premium — €110':110,'Full Day — €220':220};
+  const price = Object.entries(priceMap).find(([k])=>b.formula.startsWith(k.split('—')[0].trim()))?.[1] || 0;
+  const tva = calcTTC(price);
+  const session = { id:uid(), name:b.name, email:b.email, phone:b.phone, date:b.date, time:'', formula:b.formula.split('—')[0].trim(), price, hours:0, status:'confirmed', notes:b.message, ht:tva.ht, tva:tva.tva, createdAt:new Date().toISOString() };
+  DB.sessions.unshift(session);
+  upsertClient(b.name, b.email, b.phone, session);
+  b.status = 'confirmed';
+  saveStore(DB);
+  toast(t('toast_saved'));
+  // Mettre à jour les labels de navigation
+  document.querySelectorAll('[data-i18n-nav]').forEach(btn => {
+    const k = btn.getAttribute('data-i18n-nav');
+    const span = btn.querySelector('span');
+    if(span && I18N[lang] && I18N[lang][k]) span.textContent = I18N[lang][k].replace(/[📊📸⏱💸👥📄⚙️📈📋]/gu,'').trim();
+  });
+  renderAll();
+}
+
+function deleteBooking(id){
+  DB.bookings = DB.bookings.filter(b=>b.id!==id);
+  saveStore(DB);
+  renderBookings();
+}
+
+/* ===========================================================
+   DASHBOARD
+   =========================================================== */
+function renderDashboard(){
+  const sessions = DB.sessions;
+  const totalCA = sessions.reduce((s,x)=>s+x.price,0);
+  const totalHours = sessions.reduce((s,x)=>s+x.hours,0);
+  const avgPerHour = totalHours > 0 ? totalCA/totalHours : 0;
+  const thisMonth = sessions.filter(s => new Date(s.date).getMonth()===new Date().getMonth() && new Date(s.date).getFullYear()===new Date().getFullYear());
+  const monthCA = thisMonth.reduce((s,x)=>s+x.price,0);
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-value">${fmt(totalCA)}</div><div class="stat-label">${t('ca_total')}</div></div>
+    <div class="stat-card"><div class="stat-value">${fmt(monthCA)}</div><div class="stat-label">${t('ce_mois')}</div></div>
+    <div class="stat-card"><div class="stat-value">${sessions.length}</div><div class="stat-label">${t('sessions_label')}</div></div>
+    <div class="stat-card"><div class="stat-value">${fmt(avgPerHour)}/h</div><div class="stat-label">${t('moy_heure')}</div></div>`;
+
+  // Recent sessions
+  const recent = sessions.slice(0,5);
+  const rList = document.getElementById('recent-sessions-list');
+  rList.innerHTML = recent.length ? recent.map(s=>`
+    <div class="list-item">
+      <div class="list-item-avatar">${initials(s.name)}</div>
+      <div class="list-item-body">
+        <div class="list-item-title">${s.name}</div>
+        <div class="list-item-sub">${s.formula||'—'}</div>
+      </div>
+      <div class="list-item-right">
+        <div class="list-item-amount">${fmt(s.price)}</div>
+        <div class="list-item-date">${fmtDate(s.date)}</div>
+      </div>
+    </div>`).join('') : `<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">${t('no_sessions')}</div></div>`;
+
+  // Revenue chart (last 6 months)
+  const chart = document.getElementById('revenue-chart');
+  const months = [];
+  const now = new Date();
+  for(let i=5;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const label = d.toLocaleDateString(currentLang==='nl'?'nl-NL':currentLang==='es'?'es-ES':'fr-FR',{month:'short'});
+    const total = sessions.filter(s=>{ const sd=new Date(s.date); return sd.getFullYear()===d.getFullYear()&&sd.getMonth()===d.getMonth(); }).reduce((s,x)=>s+x.price,0);
+    months.push({label,total});
+  }
+  const maxVal = Math.max(...months.map(m=>m.total), 1);
+  chart.innerHTML = months.map(m=>`
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">${m.label}</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${(m.total/maxVal*100).toFixed(1)}%"></div></div>
+      <div class="chart-bar-val">${fmt(m.total)}</div>
+    </div>`).join('');
+
+  // Top clients
+  const topList = document.getElementById('top-clients-list');
+  const top = [...DB.clients].sort((a,b)=>(b.totalSpent||0)-(a.totalSpent||0)).slice(0,3);
+  topList.innerHTML = top.length ? top.map((c,i)=>`
+    <div class="list-item">
+      <div class="list-item-avatar">${['🥇','🥈','🥉'][i]}</div>
+      <div class="list-item-body">
+        <div class="list-item-title">${c.name}</div>
+        <div class="list-item-sub">${c.sessions.length} session${c.sessions.length>1?'s':''}</div>
+      </div>
+      <div class="list-item-right"><div class="list-item-amount">${fmt(c.totalSpent||0)}</div></div>
+    </div>`).join('') : `<div class="empty"><div class="empty-icon">🏆</div><div class="empty-text">${t('no_clients')}</div></div>`;
+}
+
+/* ===========================================================
+   SETTINGS
+   =========================================================== */
+function loadSettings(){
+  const s = DB.settings;
+  ['studioName','address','email','phone','kvk','btw','iban'].forEach(k => {
+    const el = document.getElementById('set-' + k.toLowerCase().replace('studioname','studio-name').replace('studioName','studio-name'));
+    if(el && s[k]) el.value = s[k];
+  });
+  if(s.studioName) document.getElementById('set-studio-name').value=s.studioName;
+  if(s.address)    document.getElementById('set-address').value=s.address;
+  if(s.email)      document.getElementById('set-email').value=s.email;
+  if(s.phone)      document.getElementById('set-phone').value=s.phone;
+  if(s.kvk)        document.getElementById('set-kvk').value=s.kvk;
+  if(s.btw)        document.getElementById('set-btw').value=s.btw;
+  if(s.iban)       document.getElementById('set-iban').value=s.iban;
+}
+
+function saveSettings(){
+  // Sauvegarder aussi les liens Mollie
+  const mollieFields = ['60','170','399'];
+  mollieFields.forEach(price => {
+    const el = document.getElementById('set-mollie-' + price);
+    if(el && el.value) MOLLIE_LINKS[parseInt(price)] = el.value;
+  });
+  DB.settings = {
+    studioName: document.getElementById('set-studio-name').value.trim(),
+    address:    document.getElementById('set-address').value.trim(),
+    email:      document.getElementById('set-email').value.trim(),
+    phone:      document.getElementById('set-phone').value.trim(),
+    kvk:        document.getElementById('set-kvk').value.trim(),
+    btw:        document.getElementById('set-btw').value.trim(),
+    iban:       document.getElementById('set-iban').value.trim(),
+  };
+  saveStore(DB);
+  toast(t('toast_saved'));
+}
+
+/* ===========================================================
+   BACKUP / IMPORT / EXPORT / RESET
+   =========================================================== */
+function exportData(){
+  const data = JSON.stringify({...DB, exportedAt:new Date().toISOString(), version:'2.0'}, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `AkouaStudio_backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(t('toast_exported'));
+}
+
+function importData(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if(data.sessions) DB.sessions = data.sessions;
+      if(data.clients)  DB.clients  = data.clients;
+      if(data.invoices) DB.invoices = data.invoices;
+      if(data.bookings) DB.bookings = data.bookings;
+      if(data.settings) DB.settings = data.settings;
+      saveStore(DB);
+      loadSettings();
+      renderAll();
+      toast(t('toast_imported'));
+    } catch { toast('Fichier invalide', 'error'); }
+  };
+  reader.readAsText(file);
+}
+
+function confirmReset(){
+  if(!confirm(t('confirm_reset'))) return;
+  DB = { sessions:[], clients:[], invoices:[], bookings:[], settings:{} };
+  saveStore(DB);
+  invoiceCounter = 1;
+  localStorage.setItem('as_inv_counter','1');
+  renderAll();
+  toast(t('toast_reset'));
+}
+
+/* ===========================================================
+   INIT
+   =========================================================== */
+document.addEventListener('DOMContentLoaded', async () => {
+  loadSettings();
+  setLang(currentLang);
+  renderAll(); // Render local data immediately
+  // Load from Supabase FIRST - sync between all devices
+  try {
+    const synced = await loadFromSupabase();
+    if(synced) {
+      renderAll(); // Re-render with Supabase data
+      toast('🔄 ' + (currentLang==='nl'?'Gegevens gesynchroniseerd':currentLang==='es'?'Datos sincronizados':'Données synchronisées'), 'success');
+    } else {
+      // No Supabase data yet - push local data to Supabase (first time setup)
+      if(supa && DB.kosten && DB.kosten.length > 0) {
+        await syncToSupabase('kosten', DB.kosten);
+      }
+      if(supa && DB.uren && DB.uren.length > 0) {
+        await syncToSupabase('uren', DB.uren.map(u => ({...u, begin_tijd: u.begin, eind_tijd: u.eind})));
+      }
+    }
+  } catch(e) {
+    console.warn('Supabase sync failed, using local data', e);
+  }
+
+  // Patch renderDashboard pour kosten/uren KPIs
+  const _origRenderDash = renderDashboard;
+  renderDashboard = function(){
+    _origRenderDash();
+    // Update kosten KPIs
+    const k = DB.kosten||[];
+    const totK = k.reduce((s,x)=>s+x.bedrag,0);
+    const dke = document.getElementById('dash-kosten');
+    const dkc = document.getElementById('dash-kosten-count');
+    const dkl = document.getElementById('dash-kosten-label');
+    if(dke) dke.textContent = '€'+totK.toFixed(2).replace('.',',');
+    if(dkc) dkc.textContent = k.length+' '+t('uitgaven');
+    if(dkl) dkl.textContent = '💸 '+t('totaal_kosten');
+    // Update uren KPIs
+    const u = DB.uren||[];
+    const totU = u.reduce((s,x)=>s+x.uren,0);
+    const pct = Math.min(100,Math.round(totU/1225*100));
+    const due = document.getElementById('dash-uren');
+    const dup = document.getElementById('dash-uren-pct');
+    const dul = document.getElementById('dash-uren-label');
+    if(due) due.textContent = totU.toFixed(1)+'u';
+    if(dup) dup.textContent = pct+t('van_uren');
+    if(dul) dul.textContent = '⏱ '+t('uren_jaar');
+  };
+
+  // Auto-update client datalist when clicking session modal
+  document.getElementById('s-client').addEventListener('focus', updateClientDatalist);
+
+  // Auto-sync every 30 seconds for real-time between devices
+  setInterval(async () => {
+    if(supa) {
+      const synced = await loadFromSupabase();
+      if(synced) renderAll();
+    }
+  }, 30000);
+});
+</script>
+
+<script>
+/* ===========================================================
+   FINANCE DRAWER
+   =========================================================== */
+function openFinanceDrawer(){
+  document.getElementById('finance-drawer').style.display = 'block';
+  document.getElementById('finance-drawer-overlay').style.display = 'block';
+  document.getElementById('nav-finance').classList.add('active');
+}
+function closeFinanceDrawer(){
+  document.getElementById('finance-drawer').style.display = 'none';
+  document.getElementById('finance-drawer-overlay').style.display = 'none';
+  document.getElementById('nav-finance').classList.remove('active');
+}
+</script>
+
+<!-- MODAL KOSTEN -->
+<div class="modal-overlay" id="modal-kosten">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💸 Kosten toevoegen</div>
+
+    <!-- PHOTO BON -->
+    <div style="margin-bottom:16px;">
+      <label style="display:block;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#c9a84c;margin-bottom:8px;">📷 Photo du bon (preuve fiscale)</label>
+      <label id="bon-photo-label" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#1a1a1a;border:2px dashed #c9a84c;border-radius:12px;padding:16px;cursor:pointer;transition:all .2s;" onclick="document.getElementById('k-photo-input').click()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#c9a84c" style="width:24px;height:24px;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/></svg>
+        <span id="bon-photo-txt" style="color:#c9a84c;font-size:0.8rem;font-weight:500;">Appuyer pour photographier le bon</span>
+      </label>
+      <input type="file" id="k-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="handleBonPhoto(event)">
+      <div id="bon-preview-wrap" style="display:none;margin-top:8px;position:relative;">
+        <img id="bon-preview-img" style="width:100%;border-radius:8px;border:1px solid #2a2a2a;max-height:180px;object-fit:cover;" alt="Bon">
+        <button onclick="clearBonPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.7);border:none;color:#fff;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Datum</label>
+      <input type="text" class="form-input" id="k-datum" placeholder="01/05/2026">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Winkel / Leverancier</label>
+      <input type="text" class="form-input" id="k-winkel" placeholder="Action, IKEA, Bol.com...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Omschrijving courte</label>
+      <textarea class="form-textarea" id="k-omsch" placeholder="Ex: Décoration studio, LED strips, meubles..." style="min-height:60px;"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categorie</label>
+      <select class="form-select" id="k-cat">
+        <option>Studio / Inrichting & Decoratie</option>
+        <option>Studio / Verf & Materiaal</option>
+        <option>Studio / Inrichting & Materiaal</option>
+        <option>Studio / Meubilair & Inrichting</option>
+        <option>Studio / Verlichting</option>
+        <option>Studio / Fotomateriaal</option>
+        <option>Marketing / Flyers & Promotie</option>
+        <option>Software / Tools & Abonnementen</option>
+        <option>Transport & Verplaatsing</option>
+        <option>Huur Studio</option>
+        <option>Kantoor & Administratie</option>
+        <option>Andere</option>
+      </select>
+    </div>
+
+    <!-- MONTANTS — les 3 chiffres importants -->
+    <div style="background:#0f1a0f;border:1px solid rgba(76,175,125,0.4);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:#4caf7d;margin-bottom:12px;font-weight:600;">💶 Montants du ticket</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Total TTC (€)</label>
+          <input type="number" step="0.01" class="form-input" id="k-bedrag" placeholder="293.44" oninput="autoBTW()" style="font-size:1.1rem;color:#4caf7d;font-weight:600;">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">BTW 21% (€)</label>
+          <input type="number" step="0.01" class="form-input" id="k-btw" placeholder="auto" style="color:#c9a84c;">
+        </div>
+      </div>
+      <div id="k-btw-hint" style="font-size:0.68rem;color:#666;margin-top:6px;text-align:center;">← BTW calculé automatiquement si vide</div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:4px;">
+      <button class="btn btn-gold" style="flex:2;" onclick="saveKost()">✅ Enregistrer</button>
+      <button class="btn btn-outline" style="flex:1;" onclick="closeModal('modal-kosten')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL UREN -->
+<div class="modal-overlay" id="modal-uren">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⏱ Uren bijhouden</div>
+    <div class="form-group">
+      <label class="form-label">Datum</label>
+      <input type="text" class="form-input" id="u-datum" placeholder="29/04/2026">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Activiteit</label>
+      <select class="form-select" id="u-act">
+        <option>Schilderen & Inrichten Studio</option>
+        <option>Fotosessie / Klant</option>
+        <option>Studio voorbereiding</option>
+        <option>Aankoop materiaal</option>
+        <option>Marketing / TikTok / Social Media</option>
+        <option>Administratie / Facturatie</option>
+        <option>B2B bezoeken / Salons</option>
+        <option>Opleiding / Cursus</option>
+        <option>Schoonmaken / Onderhoud</option>
+        <option>Andere</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group">
+        <label class="form-label">Begintijd</label>
+        <input type="text" class="form-input" id="u-begin" placeholder="09:00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Eindtijd</label>
+        <input type="text" class="form-input" id="u-eind" placeholder="17:30">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notitie (optioneel)</label>
+      <input type="text" class="form-input" id="u-note" placeholder="Extra info...">
+    </div>
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:14px;font-size:0.8rem;color:#888;">
+      ⏱ Uren worden automatisch berekend van begintijd tot eindtijd
+    </div>
+    <div style="display:flex;gap:12px;">
+      <button class="btn btn-gold" style="flex:2;" onclick="saveUur()">✅ Opslaan</button>
+      <button class="btn btn-outline" style="flex:1;" onclick="closeModal('modal-uren')">Annuleren</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── KOSTEN ──
+function renderKosten(){
+  const list = document.getElementById('kosten-list');
+  const totEl = document.getElementById('kosten-totaal-val');
+  const bonEl = document.getElementById('kosten-bon-count');
+  if(!list) return;
+  const kosten = DB.kosten || [];
+  const totaal = kosten.reduce((s,k) => s+k.bedrag, 0);
+  const bons = kosten.filter(k=>k.bon).length;
+  totEl.textContent = '€' + totaal.toFixed(2).replace('.',',');
+  bonEl.textContent = bons + ' / ' + kosten.length;
+  if(!kosten.length){ list.innerHTML='<p style="color:#888;text-align:center;padding:20px;">Nog geen kosten.</p>'; return; }
+  list.innerHTML = kosten.map(k => `
+    <div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div style="flex:1;">
+          <div style="font-size:0.7rem;color:#c9a84c;font-weight:600;letter-spacing:0.05em;margin-bottom:2px;">${k.cat}</div>
+          <div style="font-weight:500;font-size:0.9rem;margin-bottom:4px;">${k.winkel}</div>
+          <div style="font-size:0.75rem;color:#888;line-height:1.5;">${k.omsch}</div>
+          <div style="font-size:0.7rem;color:#666;margin-top:4px;">${k.datum} · Bon: ${k.bon?'✅':'❌'}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;color:#c9a84c;">€${k.bedrag.toFixed(2).replace('.',',')}</div>
+          ${k.btw>0?`<div style="font-size:0.7rem;color:#888;">BTW: €${k.btw.toFixed(2).replace('.',',')}</div>`:''}
+          <button onclick="deleteKost('${k.id}')" style="margin-top:6px;font-size:0.65rem;color:#e05555;background:rgba(224,85,85,0.1);border:1px solid rgba(224,85,85,0.3);border-radius:4px;padding:3px 8px;cursor:pointer;">🗑</button>
+        </div>
+      </div>
+      ${k.photo ? `<img src="${k.photo}" onclick="viewBonPhoto('${k.id}')" style="width:100%;max-height:90px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:pointer;margin-top:10px;" title="Toucher pour voir le bon">` : ''}
+    </div>
+  `).join('');
+}
+
+let bonPhotoData = null;
+
+function handleBonPhoto(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    bonPhotoData = ev.target.result;
+    document.getElementById('bon-preview-img').src = bonPhotoData;
+    document.getElementById('bon-preview-wrap').style.display = 'block';
+    document.getElementById('bon-photo-label').style.borderColor = '#4caf7d';
+    document.getElementById('bon-photo-txt').textContent = '✅ Photo enregistrée';
+    document.getElementById('bon-photo-txt').style.color = '#4caf7d';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearBonPhoto(){
+  bonPhotoData = null;
+  document.getElementById('k-photo-input').value = '';
+  document.getElementById('bon-preview-wrap').style.display = 'none';
+  document.getElementById('bon-photo-label').style.borderColor = '#c9a84c';
+  document.getElementById('bon-photo-txt').textContent = 'Appuyer pour photographier le bon';
+  document.getElementById('bon-photo-txt').style.color = '#c9a84c';
+}
+
+function autoBTW(){
+  const bedrag = parseFloat(document.getElementById('k-bedrag').value);
+  const btwEl = document.getElementById('k-btw');
+  if(!btwEl.value && !isNaN(bedrag)){
+    const btw = Math.round(bedrag/1.21*0.21*100)/100;
+    document.getElementById('k-btw-hint').textContent = '→ BTW estimé: €' + btw.toFixed(2) + ' (21%) — modifiable';
+  }
+}
+
+function saveKost(){
+  const datum = document.getElementById('k-datum').value.trim();
+  const winkel = document.getElementById('k-winkel').value.trim();
+  const omsch = document.getElementById('k-omsch').value.trim();
+  const cat = document.getElementById('k-cat').value;
+  const bedrag = parseFloat(document.getElementById('k-bedrag').value);
+  const btwInput = parseFloat(document.getElementById('k-btw').value);
+  const btw = !isNaN(btwInput) ? btwInput : Math.round(bedrag/1.21*0.21*100)/100;
+  const bon = true; // si photo présente = bon confirmé
+  if(!datum||!winkel||isNaN(bedrag)){ toast('⚠️ Date, magasin et total obligatoires','error'); return; }
+  if(!DB.kosten) DB.kosten = [];
+  const kost = {id:uid(),datum,winkel,omsch,cat,bedrag,btw,bon};
+  if(bonPhotoData) kost.photo = bonPhotoData;
+  DB.kosten.unshift(kost);
+  saveStore(DB);
+  syncToSupabase('kosten', [{
+    id: kost.id,
+    datum: kost.datum,
+    winkel: kost.winkel,
+    omschrijving: kost.omsch || kost.omschrijving || '',
+    omsch: kost.omsch || '',
+    bedrag: kost.bedrag,
+    btw: kost.btw || 0,
+    cat: kost.cat || '',
+    categorie: kost.cat || '',
+    bon: kost.bon || false,
+    created_at: new Date().toISOString()
+  }]);
+  closeModal('modal-kosten');
+  ['k-datum','k-winkel','k-omsch','k-bedrag','k-btw'].forEach(id => document.getElementById(id).value='');
+  clearBonPhoto();
+  document.getElementById('k-btw-hint').textContent = '← BTW calculé automatiquement si vide';
+  renderKosten();
+  toast('✅ Dépense enregistrée' + (bonPhotoData ? ' avec photo 📷' : ''));
+}
+
+function deleteKost(id){
+  if(!confirm('Kosten verwijderen?')) return;
+  DB.kosten = DB.kosten.filter(k=>k.id!==id);
+  saveStore(DB); deleteFromSupabase('kosten', id); renderKosten(); toast('🗑 Verwijderd','error');
+}
+
+function viewBonPhoto(id){
+  const k = DB.kosten.find(x=>x.id===id);
+  if(!k||!k.photo) return;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;max-width:500px;margin-bottom:12px;">
+      <span style="color:#c9a84c;font-size:0.8rem;font-weight:600;">${k.winkel} — ${k.datum}</span>
+      <button onclick="this.closest('div[style]').remove()" style="background:rgba(255,255,255,0.1);border:none;color:#fff;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <img src="${k.photo}" style="max-width:100%;max-height:80vh;border-radius:10px;object-fit:contain;">
+    <div style="margin-top:12px;color:#888;font-size:0.75rem;">📋 Preuve fiscale — ${k.cat} — €${k.bedrag.toFixed(2)}</div>`;
+  document.body.appendChild(overlay);
+}
+
+// ── UREN ──
+function renderUren(){
+  const list = document.getElementById('uren-list');
+  const totEl = document.getElementById('uren-totaal-val');
+  const pctEl = document.getElementById('uren-pct-val');
+  const barEl = document.getElementById('uren-bar');
+  const restEl = document.getElementById('uren-restant');
+  if(!list) return;
+  const uren = DB.uren || [];
+  const totaal = uren.reduce((s,u) => s+u.uren, 0);
+  const pct = Math.min(100, Math.round(totaal/1225*100));
+  totEl.textContent = totaal.toFixed(1) + 'u';
+  pctEl.textContent = pct + '%';
+  barEl.style.width = pct + '%';
+  const restant = Math.max(0, 1225-totaal);
+  restEl.textContent = pct>=100 ? '✅ Belastingvoordeel bereikt! Uitstekend!' : `Nog ${restant.toFixed(1)} uur nodig voor belastingvoordeel`;
+  if(!uren.length){ list.innerHTML='<p style="color:#888;text-align:center;padding:20px;">Nog geen uren.</p>'; return; }
+  list.innerHTML = uren.map(u => `
+    <div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:500;font-size:0.9rem;">${u.activiteit}</div>
+          <div style="font-size:0.75rem;color:#888;margin-top:3px;">${u.datum}${u.begin?' · '+u.begin+' → '+u.eind:''}</div>
+          ${u.note?`<div style="font-size:0.7rem;color:#666;margin-top:2px;">${u.note}</div>`:''}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;color:#c9a84c;">${u.uren}u</div>
+          <button onclick="deleteUur('${u.id}')" style="margin-top:4px;font-size:0.65rem;color:#e05555;background:rgba(224,85,85,0.1);border:1px solid rgba(224,85,85,0.3);border-radius:4px;padding:3px 8px;cursor:pointer;">🗑</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function saveUur(){
+  const datum = document.getElementById('u-datum').value.trim();
+  const act = document.getElementById('u-act').value;
+  const begin = document.getElementById('u-begin').value.trim();
+  const eind = document.getElementById('u-eind').value.trim();
+  const note = document.getElementById('u-note').value.trim();
+  if(!datum||!begin||!eind){ toast('⚠️ Vul datum, begintijd en eindtijd in','error'); return; }
+  // Calcul automatique
+  const [bh,bm] = begin.split(':').map(Number);
+  const [eh,em] = eind.split(':').map(Number);
+  const uren = Math.round(((eh*60+em)-(bh*60+bm))/60*10)/10;
+  if(uren<=0){ toast('⚠️ Eindtijd moet na begintijd zijn','error'); return; }
+  if(!DB.uren) DB.uren = [];
+  const uEntry = {id:uid(),datum,activiteit:act,begin,eind,uren,note};
+  DB.uren.unshift(uEntry);
+  saveStore(DB);
+  syncToSupabase('uren', [{
+    id: uEntry.id,
+    datum: uEntry.datum,
+    activiteit: uEntry.activiteit,
+    begin_tijd: uEntry.begin,
+    eind_tijd: uEntry.eind,
+    uren: uEntry.uren,
+    note: uEntry.note,
+    created_at: new Date().toISOString()
+  }]);
+  closeModal('modal-uren');
+  ['u-datum','u-begin','u-eind','u-note'].forEach(id => document.getElementById(id).value='');
+  renderUren();
+  toast(`✅ ${uren}u opgeslagen!`);
+}
+
+function deleteUur(id){
+  if(!confirm('Uren verwijderen?')) return;
+  DB.uren = DB.uren.filter(u=>u.id!==id);
+  saveStore(DB); deleteFromSupabase('uren', id); renderUren(); toast('🗑 Verwijderd','error');
+}
+
+// ── PATCH goPage ──
+const _origGoPage = typeof goPage === 'function' ? goPage : null;
+function goPage(name){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-'+name);
+  const nv = document.getElementById('nav-'+name);
+  if(pg) pg.classList.add('active');
+  if(nv) nv.classList.add('active');
+  if(name==='dashboard') renderDashboard();
+  else if(name==='sessions') renderSessions();
+  else if(name==='clients') renderClients();
+  else if(name==='invoices') renderInvoices();
+  else if(name==='booking') renderBookings();
+  else if(name==='kosten') renderKosten();
+  else if(name==='uren') renderUren();
+  window.scrollTo(0,0);
+}
+
+// Init date dans modals
+document.getElementById('modal-kosten').addEventListener('click', function(e){});
+document.getElementById('modal-uren').addEventListener('click', function(e){
+  if(e.target===this) this.classList.remove('open');
+});
+document.getElementById('modal-kosten').addEventListener('click', function(e){
+  if(e.target===this) this.classList.remove('open');
+});
+</script>
+
+<script>
+// ══════════════════════════════════════════
+//  BTW AANGIFTE SYSTEEM
+// ══════════════════════════════════════════
+
+const MAANDEN_PER_KWARTAAL = {
+  1: ['01','02','03'],
+  2: ['04','05','06'],
+  3: ['07','08','09'],
+  4: ['10','11','12'],
+};
+
+const KWARTAAL_NAAM = {
+  1: 'Q1 — Januari t/m Maart',
+  2: 'Q2 — April t/m Juni',
+  3: 'Q3 — Juli t/m September',
+  4: 'Q4 — Oktober t/m December',
+};
+
+function getBTWData(jaar, kwartaal) {
+  const maanden = MAANDEN_PER_KWARTAAL[kwartaal];
+  const prefix = maanden.map(m => jaar + '/' + m);
+
+  // Filter sessies van dit kwartaal (datum format: DD/MM/YYYY)
+  const sessies = (DB.sessions || []).filter(s => {
+    if (!s.date) return false;
+    const parts = s.date.split('-'); // YYYY-MM-DD
+    if (parts.length === 3) {
+      return parts[0] === String(jaar) && maanden.includes(parts[1]);
+    }
+    // Ook DD/MM/YYYY
+    const p2 = s.date.split('/');
+    if (p2.length === 3) {
+      return p2[2] === String(jaar) && maanden.includes(p2[1]);
+    }
+    return false;
+  });
+
+  // Filter kosten van dit kwartaal (datum format: DD/MM/YYYY)
+  const kosten = (DB.kosten || []).filter(k => {
+    if (!k.datum) return false;
+    const p = k.datum.split('/');
+    if (p.length === 3) return p[2] === String(jaar) && maanden.includes(p[1]);
+    const p2 = k.datum.split('-');
+    if (p2.length === 3) return p2[0] === String(jaar) && maanden.includes(p2[1]);
+    return false;
+  });
+
+  // OMZET (verkopen - wat je verdient hebt)
+  const omzetExcl = sessies.reduce((s, x) => {
+    const ttc = parseFloat(x.price || x.prijs || 0);
+    return s + Math.round(ttc / 1.21 * 100) / 100;
+  }, 0);
+  const btwOmzet = sessies.reduce((s, x) => {
+    const ttc = parseFloat(x.price || x.prijs || 0);
+    return s + Math.round((ttc - ttc/1.21) * 100) / 100;
+  }, 0);
+  const omzetTTC = sessies.reduce((s, x) => s + parseFloat(x.price || x.prijs || 0), 0);
+
+  // KOSTEN (aankopen - wat je uitgegeven hebt)
+  const kostenExcl = kosten.reduce((s, k) => {
+    const ttc = parseFloat(k.bedrag || 0);
+    return s + Math.round(ttc / 1.21 * 100) / 100;
+  }, 0);
+  const btwKosten = kosten.reduce((s, k) => {
+    const btw = parseFloat(k.btw || 0);
+    return s + (btw > 0 ? btw : Math.round((parseFloat(k.bedrag||0) - parseFloat(k.bedrag||0)/1.21) * 100) / 100);
+  }, 0);
+  const kostenTTC = kosten.reduce((s, k) => s + parseFloat(k.bedrag || 0), 0);
+
+  // BTW TE BETALEN = BTW ontvangen - BTW betaald op kosten
+  const btwTeBetalen = Math.max(0, btwOmzet - btwKosten);
+  const btwTeOntvangen = Math.max(0, btwKosten - btwOmzet);
+
+  return {
+    jaar, kwartaal,
+    sessies, kosten,
+    omzetExcl, btwOmzet, omzetTTC,
+    kostenExcl, btwKosten, kostenTTC,
+    btwTeBetalen, btwTeOntvangen,
+    saldo: btwOmzet - btwKosten,
+  };
+}
+
+function renderBTW() {
+  const jaar = parseInt(document.getElementById('btw-jaar').value);
+  const kwartaal = parseInt(document.getElementById('btw-kwartaal').value);
+  const d = getBTWData(jaar, kwartaal);
+
+  // Samenvatting KPIs
+  const summaryEl = document.getElementById('btw-summary');
+  const saldoPositief = d.saldo >= 0;
+  summaryEl.innerHTML = `
+    <div style="background:linear-gradient(135deg,#0a1a0a,#102010);border:1px solid rgba(76,175,61,0.3);border-radius:12px;padding:14px;text-align:center;">
+      <div style="font-size:0.65rem;letter-spacing:0.1em;color:#888;text-transform:uppercase;margin-bottom:6px;">💰 Omzet excl. BTW</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;color:#4caf7d;">€${d.omzetExcl.toFixed(2).replace('.',',')}</div>
+      <div style="font-size:0.7rem;color:#666;margin-top:3px;">${d.sessies.length} sessies · BTW: €${d.btwOmzet.toFixed(2).replace('.',',')}</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#1a0a0a,#2a1010);border:1px solid rgba(224,85,85,0.3);border-radius:12px;padding:14px;text-align:center;">
+      <div style="font-size:0.65rem;letter-spacing:0.1em;color:#888;text-transform:uppercase;margin-bottom:6px;">💸 Kosten excl. BTW</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;color:#e05555;">€${d.kostenExcl.toFixed(2).replace('.',',')}</div>
+      <div style="font-size:0.7rem;color:#666;margin-top:3px;">${d.kosten.length} uitgaven · BTW: €${d.btwKosten.toFixed(2).replace('.',',')}</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#0a0a1a,#10102a);border:1px solid rgba(201,168,76,0.3);border-radius:12px;padding:14px;text-align:center;grid-column:1/-1;">
+      <div style="font-size:0.65rem;letter-spacing:0.1em;color:#888;text-transform:uppercase;margin-bottom:6px;">
+        ${saldoPositief ? '⚠️ BTW te betalen aan belastingdienst' : '✅ BTW terug te ontvangen'}
+      </div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:700;color:${saldoPositief ? '#c9a84c' : '#4caf7d'};">
+        €${Math.abs(d.saldo).toFixed(2).replace('.',',')}
+      </div>
+      <div style="font-size:0.75rem;color:#888;margin-top:4px;">
+        ${saldoPositief ? 'Dit bedrag betaal je aan belastingdienst.nl' : 'Dit bedrag ontvang je terug van belastingdienst'}
+      </div>
+    </div>
+  `;
+
+  // Detail rapport
+  const detailEl = document.getElementById('btw-detail');
+  const s = DB.settings || {};
+  detailEl.innerHTML = `
+    <div style="background:linear-gradient(135deg,#111,#181818);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:16px;margin-bottom:12px;">
+      <p class="section-title">📊 Aangifte overzicht ${KWARTAAL_NAAM[kwartaal]} ${jaar}</p>
+
+      <div style="border:1px solid #2a2a2a;border-radius:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="background:#1a1a1a;padding:10px 14px;font-size:0.7rem;font-weight:600;letter-spacing:0.1em;color:#c9a84c;text-transform:uppercase;">Rubriek 1 — Omzet</div>
+        <div style="padding:10px 14px;display:flex;justify-content:space-between;border-bottom:1px solid #222;font-size:0.85rem;">
+          <span style="color:#bbb;">1a. Leveringen/diensten belast met 21%</span>
+          <span style="font-weight:600;">€${d.omzetExcl.toFixed(2).replace('.',',')}</span>
+        </div>
+        <div style="padding:10px 14px;display:flex;justify-content:space-between;font-size:0.85rem;background:rgba(201,168,76,0.05);">
+          <span style="color:#bbb;">BTW 21% over omzet</span>
+          <span style="font-weight:600;color:#c9a84c;">€${d.btwOmzet.toFixed(2).replace('.',',')}</span>
+        </div>
+      </div>
+
+      <div style="border:1px solid #2a2a2a;border-radius:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="background:#1a1a1a;padding:10px 14px;font-size:0.7rem;font-weight:600;letter-spacing:0.1em;color:#c9a84c;text-transform:uppercase;">Rubriek 5 — Voorbelasting (aftrekbare BTW)</div>
+        <div style="padding:10px 14px;display:flex;justify-content:space-between;border-bottom:1px solid #222;font-size:0.85rem;">
+          <span style="color:#bbb;">5b. Totaal zakelijke inkopen excl. BTW</span>
+          <span style="font-weight:600;">€${d.kostenExcl.toFixed(2).replace('.',',')}</span>
+        </div>
+        <div style="padding:10px 14px;display:flex;justify-content:space-between;font-size:0.85rem;background:rgba(224,85,85,0.05);">
+          <span style="color:#bbb;">Voorbelasting (BTW op inkopen)</span>
+          <span style="font-weight:600;color:#e05555;">€${d.btwKosten.toFixed(2).replace('.',',')}</span>
+        </div>
+      </div>
+
+      <div style="border:2px solid ${saldoPositief ? '#c9a84c' : '#4caf7d'};border-radius:8px;padding:14px;background:${saldoPositief ? 'rgba(201,168,76,0.08)' : 'rgba(76,175,61,0.08)'};">
+        <div style="font-size:0.75rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${saldoPositief ? '#c9a84c' : '#4caf7d'};margin-bottom:8px;">
+          ${saldoPositief ? '⚠️ Te betalen (rubriek 5d)' : '✅ Terug te ontvangen'}
+        </div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;color:${saldoPositief ? '#c9a84c' : '#4caf7d'};">
+          €${Math.abs(d.saldo).toFixed(2).replace('.',',')}
+        </div>
+        <div style="font-size:0.75rem;color:#888;margin-top:6px;">
+          = BTW omzet (€${d.btwOmzet.toFixed(2)}) - Voorbelasting (€${d.btwKosten.toFixed(2)})
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessies detail -->
+    <div style="background:linear-gradient(135deg,#111,#181818);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:16px;margin-bottom:12px;">
+      <p class="section-title">📸 Sessies dit kwartaal (${d.sessies.length})</p>
+      ${d.sessies.length === 0
+        ? '<p style="color:#888;font-size:0.85rem;text-align:center;padding:16px;">Nog geen sessies in dit kwartaal</p>'
+        : d.sessies.map(s => `
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #222;font-size:0.82rem;">
+            <div><span style="color:#c9a84c;font-weight:600;">${s.formula||s.formule||'—'}</span><br><span style="color:#888;">${s.client||s.klant||'—'} · ${s.date||s.datum||'—'}</span></div>
+            <div style="text-align:right;"><span style="font-weight:600;">€${parseFloat(s.price||s.prijs||0).toFixed(2)}</span><br><span style="color:#888;font-size:0.7rem;">excl: €${(parseFloat(s.price||s.prijs||0)/1.21).toFixed(2)}</span></div>
+          </div>`).join('')
+      }
+      <div style="display:flex;justify-content:space-between;padding:10px 0 0;font-weight:700;font-size:0.9rem;">
+        <span style="color:#c9a84c;">TOTAAL OMZET TTC</span>
+        <span style="color:#c9a84c;">€${d.omzetTTC.toFixed(2).replace('.',',')}</span>
+      </div>
+    </div>
+
+    <!-- Kosten detail -->
+    <div style="background:linear-gradient(135deg,#111,#181818);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:16px;margin-bottom:12px;">
+      <p class="section-title">💸 Kosten dit kwartaal (${d.kosten.length})</p>
+      ${d.kosten.length === 0
+        ? '<p style="color:#888;font-size:0.85rem;text-align:center;padding:16px;">Nog geen kosten in dit kwartaal</p>'
+        : d.kosten.map(k => `
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #222;font-size:0.82rem;">
+            <div><span style="color:#fff;font-weight:500;">${k.winkel||'—'}</span><br><span style="color:#888;">${k.omsch||'—'} · ${k.datum||'—'}</span></div>
+            <div style="text-align:right;"><span style="font-weight:600;color:#e05555;">€${parseFloat(k.bedrag||0).toFixed(2)}</span><br><span style="color:#888;font-size:0.7rem;">BTW: €${parseFloat(k.btw||0).toFixed(2)}</span></div>
+          </div>`).join('')
+      }
+      <div style="display:flex;justify-content:space-between;padding:10px 0 0;font-weight:700;font-size:0.9rem;">
+        <span style="color:#e05555;">${t('totaal_kosten')} TTC</span>
+        <span style="color:#e05555;">€${d.kostenTTC.toFixed(2).replace('.',',')}</span>
+      </div>
+    </div>
+  `;
+}
+
+function downloadBTWPDF() {
+  const jaar = parseInt(document.getElementById('btw-jaar').value);
+  const kwartaal = parseInt(document.getElementById('btw-kwartaal').value);
+  const d = getBTWData(jaar, kwartaal);
+  const s = DB.settings || {};
+  const saldoPositief = d.saldo >= 0;
+
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>BTW Aangifte ${KWARTAAL_NAAM[kwartaal]} ${jaar}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;padding:30px;color:#111;font-size:12px;}
+  .logo{font-family:Georgia,serif;font-size:22px;font-weight:700;color:#C9A84C;letter-spacing:2px;}
+  .sub{font-size:8px;letter-spacing:3px;color:#888;text-transform:uppercase;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #C9A84C;}
+  .title{font-size:18px;font-weight:700;color:#111;margin-bottom:4px;}
+  .badge{background:#C9A84C;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;display:inline-block;margin-top:4px;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;}
+  th{background:#f5f5f5;padding:8px 10px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#666;}
+  td{padding:8px 10px;border-bottom:1px solid #eee;font-size:11px;}
+  .section-title{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#C9A84C;font-weight:700;margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid #eee;}
+  .total-box{background:${saldoPositief ? '#fff8e8' : '#f0fff8'};border:2px solid ${saldoPositief ? '#C9A84C' : '#4caf7d'};border-radius:8px;padding:14px;margin:14px 0;}
+  .total-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:${saldoPositief ? '#8B6914' : '#2e7d32'};margin-bottom:4px;}
+  .total-amount{font-size:24px;font-weight:700;color:${saldoPositief ? '#C9A84C' : '#4caf7d'};}
+  .info-row{display:flex;justify-content:space-between;padding:4px 0;font-size:11px;}
+  .footer{text-align:center;font-size:8px;color:#aaa;margin-top:24px;padding-top:12px;border-top:1px solid #eee;}
+  @media print{body{padding:20px}}
+</style>
+</head><body>
+<div class="header">
+  <div>
+    <img src="https://raw.githubusercontent.com/priscaakoua00-sys/akoua-studio-webhook/main/logo.png" style="width:100px;height:100px;object-fit:contain;" alt="Akoua Studio">
+    <div style="margin-top:8px;font-size:10px;color:#555;line-height:1.8;">
+      Keulsveld 17, kantoor 4<br>
+      4705 RS Roosendaal<br>
+      KVK: 42042214<br>
+      BTW-id: NL005451884B82<br>
+      OB-nummer: 342639833B01
+    </div>
+  </div>
+  <div style="text-align:right;">
+    <div class="title">BTW AANGIFTE</div>
+    <div style="font-size:13px;color:#555;margin-top:4px;">${KWARTAAL_NAAM[kwartaal]}</div>
+    <div style="font-size:13px;font-weight:700;">${jaar}</div>
+    <div class="badge">Kwartaalaangifte</div>
+    <div style="font-size:10px;color:#888;margin-top:8px;">Gegenereerd: ${new Date().toLocaleDateString('nl-NL')}</div>
+  </div>
+</div>
+
+<div class="section-title">Rubriek 1 — Prestaties binnenland</div>
+<table>
+  <thead><tr><th>Omschrijving</th><th style="text-align:right">Grondslag excl. BTW</th><th style="text-align:right">BTW 21%</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>1a. Leveringen/diensten belast met 21%<br><span style="color:#888;font-size:10px;">${d.sessies.length} fotosessies Akoua Studio</span></td>
+      <td style="text-align:right;font-weight:700;">€${d.omzetExcl.toFixed(2)}</td>
+      <td style="text-align:right;font-weight:700;color:#C9A84C;">€${d.btwOmzet.toFixed(2)}</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="section-title">Rubriek 5 — Voorbelasting</div>
+<table>
+  <thead><tr><th>Omschrijving</th><th style="text-align:right">Grondslag excl. BTW</th><th style="text-align:right">Voorbelasting</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>5b. BTW op zakelijke inkopen<br><span style="color:#888;font-size:10px;">${d.kosten.length} zakelijke uitgaven</span></td>
+      <td style="text-align:right;font-weight:700;">€${d.kostenExcl.toFixed(2)}</td>
+      <td style="text-align:right;font-weight:700;color:#e05555;">€${d.btwKosten.toFixed(2)}</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="total-box">
+  <div class="total-label">${saldoPositief ? '⚠️ Te betalen aan belastingdienst (rubriek 5d)' : '✅ Terug te ontvangen van belastingdienst'}</div>
+  <div class="total-amount">€${Math.abs(d.saldo).toFixed(2)}</div>
+  <div style="font-size:10px;color:#888;margin-top:6px;">BTW omzet €${d.btwOmzet.toFixed(2)} − Voorbelasting €${d.btwKosten.toFixed(2)} = €${d.saldo.toFixed(2)}</div>
+</div>
+
+<div class="section-title">Detail sessies (${d.sessies.length})</div>
+<table>
+  <thead><tr><th>Datum</th><th>Klant</th><th>Formule</th><th style="text-align:right">TTC</th><th style="text-align:right">Excl. BTW</th><th style="text-align:right">BTW 21%</th></tr></thead>
+  <tbody>
+    ${d.sessies.length === 0
+      ? '<tr><td colspan="6" style="text-align:center;color:#888;padding:16px;">Geen sessies in dit kwartaal</td></tr>'
+      : d.sessies.map(s => {
+          const ttc = parseFloat(s.price||s.prijs||0);
+          const excl = ttc/1.21;
+          const btw = ttc-excl;
+          return `<tr><td>${s.date||s.datum||'—'}</td><td>${s.client||s.klant||'—'}</td><td>${s.formula||s.formule||'—'}</td><td style="text-align:right">€${ttc.toFixed(2)}</td><td style="text-align:right">€${excl.toFixed(2)}</td><td style="text-align:right;color:#C9A84C">€${btw.toFixed(2)}</td></tr>`;
+        }).join('')
+    }
+    <tr style="font-weight:700;background:#f9f9f9;"><td colspan="3">TOTAAL</td><td style="text-align:right">€${d.omzetTTC.toFixed(2)}</td><td style="text-align:right">€${d.omzetExcl.toFixed(2)}</td><td style="text-align:right;color:#C9A84C">€${d.btwOmzet.toFixed(2)}</td></tr>
+  </tbody>
+</table>
+
+<div class="section-title">Detail kosten (${d.kosten.length})</div>
+<table>
+  <thead><tr><th>Datum</th><th>Leverancier</th><th>Categorie</th><th style="text-align:right">TTC</th><th style="text-align:right">BTW</th><th>Bon</th></tr></thead>
+  <tbody>
+    ${d.kosten.length === 0
+      ? '<tr><td colspan="6" style="text-align:center;color:#888;padding:16px;">Geen kosten in dit kwartaal</td></tr>'
+      : d.kosten.map(k => `<tr><td>${k.datum||'—'}</td><td>${k.winkel||'—'}</td><td>${k.cat||'—'}</td><td style="text-align:right;color:#e05555">€${parseFloat(k.bedrag||0).toFixed(2)}</td><td style="text-align:right">€${parseFloat(k.btw||0).toFixed(2)}</td><td style="text-align:center">${k.bon?'✅':'❌'}</td></tr>`).join('')
+    }
+    <tr style="font-weight:700;background:#f9f9f9;"><td colspan="3">TOTAAL</td><td style="text-align:right;color:#e05555">€${d.kostenTTC.toFixed(2)}</td><td style="text-align:right">€${d.btwKosten.toFixed(2)}</td><td></td></tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  Akoua Studio · Keulsveld 17 kantoor 4 · 4705 RS Roosendaal · KVK 42042214 · BTW NL005451884B82<br>
+  Dit document is gegenereerd door Akoua Studio Admin App · ${new Date().toLocaleDateString('nl-NL')} · Voor officiële aangifte: belastingdienst.nl
+</div>
+
+<scr'+'ipt>window.onload=()=>window.print();<\/scr'+'ipt>
+</body></html>`;
+
+  // Téléchargement direct sans popup
+  const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'BTW_Aangifte_Q' + kwartaal + '_' + jaar + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('✅ PDF gedownload!');
+}
+
+/* ===========================================================
+   AUTO-REFRESH SUPABASE — toutes les 30 secondes
+   =========================================================== */
+let _lastSessionCount = DB.sessions.length;
+let _lastBookingCount = DB.bookings.length;
+
+async function autoRefreshFromSupabase() {
+  if (!supa) return;
+  try {
+    const [s, b] = await Promise.all([
+      supa.from('sessies').select('*').order('created_at', {ascending:false}),
+      supa.from('boekingen').select('*').order('created_at', {ascending:false}),
+    ]);
+
+    let changed = false;
+
+    if (s.data && s.data.length > _lastSessionCount) {
+      const newSessions = s.data.map(r => ({...r, date: r.session_date, time: r.session_time}));
+      const newOnes = newSessions.filter(ns => !DB.sessions.find(ds => ds.id === ns.id));
+      if (newOnes.length > 0) {
+        DB.sessions = newSessions;
+        newOnes.forEach(ns => {
+          toast('💳 Nouveau paiement: ' + (ns.client || ns.name || '') + ' — ' + (ns.formula || '') , 'success');
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Akoua Studio — Nouveau paiement!', {
+              body: (ns.client || ns.name || 'Client') + ' — ' + (ns.formula || '') + ' — €' + (ns.price || ''),
+              icon: 'https://raw.githubusercontent.com/priscaakoua00-sys/akoua-studio-webhook/main/logo.png'
+            });
+          }
+        });
+        changed = true;
+      }
+      _lastSessionCount = s.data.length;
+    }
+
+    if (b.data && b.data.length > _lastBookingCount) {
+      const newBookings = b.data.map(r => ({...r, date: r.booking_date}));
+      const newOnes = newBookings.filter(nb => !DB.bookings.find(db => db.id === nb.id));
+      if (newOnes.length > 0) {
+        DB.bookings = newBookings;
+        newOnes.forEach(nb => {
+          toast('📅 Nouvelle réservation: ' + (nb.name || '') , 'success');
+        });
+        changed = true;
+      }
+      _lastBookingCount = b.data.length;
+    }
+
+    if (changed) { saveStore(DB); renderAll(); }
+  } catch(e) {}
+}
+
+// Demander permission notifications
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+// Lancer auto-refresh toutes les 30 secondes
+setInterval(autoRefreshFromSupabase, 30000);
+
+/* ===========================================================
+   CALENDRIER VISUEL
+   =========================================================== */
+function renderCalendar() {
+  const container = document.getElementById('calendar-view');
+  if (!container) return;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthNames = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+
+  // Récupérer les jours avec sessions
+  const bookedDays = new Set();
+  DB.sessions.forEach(s => {
+    if (s.date) {
+      const d = new Date(s.date);
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        bookedDays.add(d.getDate());
+      }
+    }
+  });
+
+  let html = `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;">`;
+  html += `<div style="text-align:center;font-family:var(--font-display);font-size:1.2rem;color:var(--gold);margin-bottom:12px;">${monthNames[month]} ${year}</div>`;
+  html += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;">`;
+  ['Z','M','D','W','D','V','Z'].forEach(d => {
+    html += `<div style="font-size:0.55rem;color:var(--grey);font-weight:600;padding:4px;">${d}</div>`;
+  });
+
+  const start = firstDay === 0 ? 6 : firstDay - 1;
+  for (let i = 0; i < start; i++) {
+    html += `<div></div>`;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === now.getDate();
+    const isBooked = bookedDays.has(d);
+    const isPast = new Date(year, month, d) < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let style = 'font-size:0.75rem;padding:6px 2px;border-radius:6px;';
+    if (isToday) style += 'background:var(--gold);color:#000;font-weight:700;';
+    else if (isBooked) style += 'background:rgba(76,175,125,0.2);border:1px solid var(--success);color:var(--success);';
+    else if (isPast) style += 'color:var(--grey);opacity:0.4;';
+    else style += 'color:var(--white);';
+    html += `<div style="${style}">${d}${isBooked ? '<div style="font-size:8px;">✓</div>' : ''}</div>`;
+  }
+  html += `</div>`;
+  html += `<div style="display:flex;gap:12px;margin-top:12px;font-size:0.6rem;color:var(--grey);">`;
+  html += `<span><span style="color:var(--gold);">■</span> Aujourd'hui</span>`;
+  html += `<span><span style="color:var(--success);">■</span> Session</span>`;
+  html += `</div></div>`;
+
+  container.innerHTML = html;
+}
+
+// Ajouter le calendrier dans la page sessions
+const _sessionsPage = document.getElementById('page-sessions');
+if (_sessionsPage) {
+  const calDiv = document.createElement('div');
+  calDiv.id = 'calendar-view';
+  calDiv.style.marginBottom = '16px';
+  const sessionsList = document.getElementById('sessions-list');
+  if (sessionsList) _sessionsPage.insertBefore(calDiv, sessionsList);
+}
+
+renderCalendar();
+
+// Patch goPage voor BTW
+const _goPageOrig2 = goPage;
+goPage = function(name) {
+  _goPageOrig2(name);
+  if(name === 'btw') renderBTW();
+};
+
+// Init BTW page automatisch op huidig kwartaal
+const _nowMonth = new Date().getMonth() + 1;
+const _nowQ = Math.ceil(_nowMonth / 3);
+setTimeout(() => {
+  const el = document.getElementById('btw-kwartaal');
+  if(el) el.value = _nowQ;
+}, 100);
+
+// ══════════════════════════════════════════
+// LOGIN / CLIENT / ADMIN SYSTEM
+// ══════════════════════════════════════════
+var ADMIN_PASSWORD = 'AS@Studio#2026!';
+var _secretClicks = 0;
+var _secretTimer = null;
+function secretAdminClick() {
+  _secretClicks++;
+  if (_secretTimer) clearTimeout(_secretTimer);
+  _secretTimer = setTimeout(function(){ _secretClicks = 0; }, 4000);
+  if (_secretClicks >= 5) {
+    _secretClicks = 0;
+    showAdminLogin();
+  }
+}
+var currentUser = null;
+var selectedSlotData = null;
+
+function initLoginSystem() {
+  var saved = localStorage.getItem('akoua_user');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      if (currentUser.isAdmin) { showAdminApp(); }
+      else { showClientApp(); }
+      return;
+    } catch(e) {}
+  }
+  // Show login screen
+  document.getElementById('loginScreen').classList.add('show');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('clientMode').style.display = 'none';
+}
+
+function showAdminLogin() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('adminLoginForm').style.display = 'block';
+}
+
+function showClientLogin() {
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('adminLoginForm').style.display = 'none';
+}
+
+function adminLogin() {
+  var pwd = document.getElementById('adminPwd').value;
+  if (pwd === ADMIN_PASSWORD) {
+    currentUser = { isAdmin: true, email: 'akouastudio@gmail.com', name: 'Akoua' };
+    localStorage.setItem('akoua_user', JSON.stringify(currentUser));
+    showAdminApp();
+  } else {
+    alert('Wachtwoord onjuist!');
+  }
+}
+
+function clientLogin() {
+  var email = document.getElementById('loginEmail').value.trim();
+  var name = document.getElementById('loginName').value.trim();
+  if (!email || !name) { alert('Vul je naam en email in!'); return; }
+  if (!email.includes('@')) { alert('Geldig email adres vereist!'); return; }
+  currentUser = { isAdmin: false, email: email, name: name };
+  localStorage.setItem('akoua_user', JSON.stringify(currentUser));
+  showClientApp();
+}
+
+function showAdminApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('clientMode').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+function showClientApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('clientMode').style.display = 'block';
+  document.getElementById('cmWelcome').textContent = 'Welkom, ' + currentUser.name + '!';
+  document.getElementById('cmEmail').textContent = currentUser.email;
+  loadClientSessions();
+}
+
+function logout() {
+  localStorage.removeItem('akoua_user');
+  currentUser = null;
+  location.reload();
+}
+
+function selectSlot(el, name, dur, price, mollieLink) {
+  document.querySelectorAll('.cm-slot').forEach(function(s){ s.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedSlotData = { name: name, dur: dur, price: price, mollieLink: mollieLink };
+  document.getElementById('cmBookingForm').style.display = 'block';
+  document.getElementById('cmBookingForm').scrollIntoView({behavior:'smooth'});
+}
+
+function cancelSlot() {
+  document.querySelectorAll('.cm-slot').forEach(function(s){ s.classList.remove('selected'); });
+  document.getElementById('cmBookingForm').style.display = 'none';
+  selectedSlotData = null;
+}
+
+function goToPayment() {
+  if (!selectedSlotData) return;
+  var dt = document.getElementById('cmDateTime').value;
+  if (!dt) { alert('Kies een datum en tijd!'); return; }
+  // Save booking to Supabase
+  var booking = {
+    id: crypto.randomUUID(),
+    name: currentUser.name,
+    email: currentUser.email,
+    formula: selectedSlotData.name,
+    price: parseFloat(selectedSlotData.price),
+    booking_date: dt,
+    status: 'pending',
+    created_at: new Date().toISOString()
+  };
+  if (supa) {
+    supa.from('boekingen').insert(booking).then(function(res) {
+      console.log('Booking saved:', res);
+    });
+  }
+  // Redirect to Mollie payment
+  window.open(selectedSlotData.mollieLink, '_blank');
+  toast('Betaling geopend! Keer terug na de betaling.', 'success');
+  cancelSlot();
+  loadClientSessions();
+}
+
+function loadClientSessions() {
+  if (!supa || !currentUser) return;
+  supa.from('sessies').select('*').eq('email', currentUser.email).order('created_at', {ascending:false}).then(function(res) {
+    var el = document.getElementById('cmMySessions');
+    if (!el) return;
+    if (!res.data || res.data.length === 0) {
+      el.innerHTML = '<p style="font-size:0.7rem;color:var(--grey);">Nog geen sessies geboekt.</p>';
+      return;
+    }
+    el.innerHTML = res.data.map(function(s) {
+      return '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:8px;">' +
+        '<div style="font-family:var(--font-display);font-size:1rem;color:var(--white);">' + (s.formula||s.name||'Session') + '</div>' +
+        '<div style="font-size:0.58rem;color:var(--grey);margin-top:4px;">' + (s.date||s.session_date||s.created_at||'') + '</div>' +
+        '<div style="font-family:var(--font-display);font-size:1.1rem;color:var(--gold);margin-top:4px;">&#8364;' + (s.price||0) + '</div>' +
+        '</div>';
+    }).join('');
+  });
+}
+
+// START LOGIN SYSTEM
+initLoginSystem();
+</script>
+
+<!-- ══ ABONNEMENT BEVESTIGING MODAL ══ -->
+<div id="aboConfirmOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#111;border:1px solid rgba(201,168,76,0.4);border-radius:16px;max-width:380px;width:100%;padding:28px 24px;position:relative;">
+    <!-- top gold line -->
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#C9A84C,transparent);border-radius:16px 16px 0 0;"></div>
+
+    <div style="font-size:0.5rem;letter-spacing:5px;color:rgba(201,168,76,0.6);font-weight:700;margin-bottom:10px;">ABONNEMENT SAMENVATTING</div>
+
+    <div id="aboConfirmName" style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:#C9A84C;font-weight:300;letter-spacing:3px;margin-bottom:4px;"></div>
+    <div id="aboConfirmDetail" style="font-size:0.62rem;color:#888;margin-bottom:16px;letter-spacing:1px;"></div>
+
+    <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent);margin-bottom:16px;"></div>
+
+    <!-- Ce que tu reçois -->
+    <div style="font-size:0.5rem;letter-spacing:4px;color:rgba(201,168,76,0.5);font-weight:600;margin-bottom:10px;">WAT JE KRIJGT</div>
+    <div id="aboConfirmBenefits" style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px;"></div>
+
+    <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent);margin-bottom:16px;"></div>
+
+    <!-- Prijs -->
+    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px;">
+      <span style="font-family:'Cormorant Garamond',serif;font-size:2.2rem;color:#F5F0E8;font-weight:300;" id="aboConfirmPrice"></span>
+      <span style="font-size:0.58rem;color:#666;">/maand · automatische incasso</span>
+    </div>
+    <div style="font-size:0.55rem;color:#555;margin-bottom:20px;">Veilig betalen via iDEAL, creditcard of Apple Pay · Opzegbaar per maand</div>
+
+    <!-- Buttons -->
+    <button onclick="proceedAboPayment()" style="width:100%;background:linear-gradient(135deg,#C9A84C,#E8D08A);color:#000;border:none;border-radius:8px;padding:14px;font-family:'Montserrat',sans-serif;font-size:0.62rem;font-weight:700;letter-spacing:3px;cursor:pointer;margin-bottom:10px;">BEVESTIGEN &amp; BETALEN &#8594;</button>
+    <button onclick="closeAboConfirm()" style="width:100%;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px;color:#666;font-family:'Montserrat',sans-serif;font-size:0.58rem;letter-spacing:2px;cursor:pointer;">Annuleren</button>
+  </div>
+</div>
+
+<script>
+var _aboLink = '';
+
+var _aboBenefits = {
+  'Pro': [
+    '👤 Persoonlijk studio-account',
+    '🕐 14 uur per maand studiogebruik',
+    '⏱️ Max. 2 uur per sessie',
+    '📅 Max. 2 sessies per week',
+    '📸 Toegang tot alle studio-apparatuur',
+    '🎯 Prioriteit bij boekingen',
+    '🧾 Maandelijks factuur inbegrepen'
+  ],
+  'Premium': [
+    '👤 Persoonlijk studio-account',
+    '🕐 16 uur per maand studiogebruik',
+    '📅 Max. 2 sessies per week',
+    '📸 Volledige toegang tot alle apparatuur',
+    '🥇 Hoogste prioriteit bij boekingen',
+    '🎁 Exclusieve kortingen & voordelen',
+    '🧾 Maandelijks factuur inbegrepen'
+  ]
+};
+
+function showAboConfirm(name, detail, price, link) {
+  _aboLink = link;
+  document.getElementById('aboConfirmName').textContent = name;
+  document.getElementById('aboConfirmDetail').textContent = detail;
+  document.getElementById('aboConfirmPrice').textContent = '€' + price;
+
+  var benefits = _aboBenefits[name] || [];
+  document.getElementById('aboConfirmBenefits').innerHTML = benefits.map(function(b) {
+    return '<div style="font-size:0.6rem;color:rgba(245,240,232,0.75);display:flex;align-items:flex-start;gap:8px;">' +
+      '<span>' + b + '</span></div>';
+  }).join('');
+
+  var overlay = document.getElementById('aboConfirmOverlay');
+  overlay.style.display = 'flex';
+}
+
+function closeAboConfirm() {
+  document.getElementById('aboConfirmOverlay').style.display = 'none';
+  _aboLink = '';
+}
+
+function proceedAboPayment() {
+  if (_aboLink) {
+    window.open(_aboLink, '_blank');
+    closeAboConfirm();
+  }
+}
+
+// Close on overlay click
+document.getElementById('aboConfirmOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeAboConfirm();
+});
+</script>
+
+</body>
+</html>
